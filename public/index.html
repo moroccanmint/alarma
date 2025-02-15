@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALARMA</title>
+    <link rel="apple-touch-icon" sizes="57x57" href="icons/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="icons/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="icons/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="icons/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="icons/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="icons/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="icons/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="css/styles.css">  
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <button id="toggle-sidebar"><img id="menu" src="public/img/menu.svg"></button>
+    <div id="sidebar">
+        <div id="sidebar-header">
+            <img id="logo" src="/public/icons/alarma-logo-text.svg" alt="ALARMA Logo">
+        </div>
+        <div id="station-container">
+            <!-- Station cards will be dynamically inserted here -->
+        </div>
+    </div>
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="bottom-dock">
+            <button id="pin-destination-btn" class="dock-btn"><img src="/public/img/pin.svg"><span class="button-descriptions">Pin Destination</span></button>
+            <button id="route-btn" class="dock-btn"><img src="/public/img/route.svg"><span class="button-descriptions">Find Safe Route</span></button>
+            <button id="simulate-flood" class="dock-btn warning"><img src="/public/img/flood.svg"><span class="button-descriptions">Simulate Flood</span></button>
+        </div>
+    </div>
+    <div id="loading-overlay">
+        <div class="spinner">
+            <img src="/public/icons/alarma-logo.png" alt="Loading...">
+        </div>
+    </div>
+    <div class="station-controls" id="station-controls">
+        <!-- Station toggle buttons will be added here dynamically -->
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
+    <script>
+        // Toggle sidebar functionality
+        const toggleBtn = document.getElementById('toggle-sidebar');
+        const sidebar = document.getElementById('sidebar');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+
+        // Close sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 1100) {  // Only on mobile view
+                const isClickInsideSidebar = sidebar.contains(e.target);
+                const isClickOnToggleBtn = toggleBtn.contains(e.target);
+                
+                if (!isClickInsideSidebar && !isClickOnToggleBtn && sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                }
+            }
+        });
+
+        // Initialize stations data
+        const stations = [
+            {
+                id: 'station-1',
+                name: 'Alarma Station 1',
+                coordinates: [15.024505, 120.680464],
+                status: 'normal',
+                lastUpdate: new Date().toISOString()
+            },
+            {
+                id: 'station-2',
+                name: 'Alarma Station 2',
+                coordinates: [15.030505, 120.685464],
+                status: 'normal',
+                lastUpdate: new Date().toISOString()
+            },
+            {
+                id: 'station-3',
+                name: 'Alarma Station 3',
+                coordinates: [15.028505, 120.682464],
+                status: 'normal',
+                lastUpdate: new Date().toISOString()
+            }
+        ];
+
+        // Add custom start and end icons
+        const startIcon = L.icon({
+            iconUrl: '/public/img/start.svg',
+            iconSize: [36, 36],
+            iconAnchor: [24, 48]
+        });
+
+        const endIcon = L.icon({
+            iconUrl: '/public/img/end.svg',
+            iconSize: [36, 36],
+            iconAnchor: [24, 48]
+        });
+
+        // Initialize map
+        const map = L.map('map').setView([15.024505, 120.680464], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Station markers
+        const markers = new Map();
+        const stationIcons = {
+            normal: L.icon({
+                iconUrl: '/public/img/station3.svg',
+                iconSize: [48, 48],
+                iconAnchor: [16, 32, 48]
+            }),
+            warning: L.icon({
+                iconUrl: '/public/img/warning.svg',
+                iconSize: [48, 48],
+                iconAnchor: [16, 32, 48]
+            }),
+            emergency: L.icon({
+                iconUrl: '/public/img/flooded.svg',
+                iconSize: [48, 48],
+                iconAnchor: [16, 32, 48]
+            })
+        };
+
+        let startMarker, endMarker;
+        let routingControl = null;
+
+        // Initialize stations on map
+        function initializeStations() {
+            stations.forEach(station => {
+                const marker = L.marker(station.coordinates, {
+                    icon: stationIcons[station.status],
+                    title: station.name
+                }).addTo(map);
+
+                marker.bindPopup(`<b>${station.name}</b><br>Status: ${station.status}`);
+                markers.set(station.id, marker);
+            });
+            updateStatusPanel();
+        }
+
+        function updateStatusPanel() {
+            const stationContainer = document.getElementById('station-container');
+            stationContainer.innerHTML = stations.map(station => `
+                <div class="station-card" data-station-id="${station.id}">
+                    <h3>${station.name}</h3>
+                    <div class="station-status status-${station.status}">
+                        ${station.status.charAt(0).toUpperCase() + station.status.slice(1)}
+                    </div>
+                    <p class="station-timestamp">Last Update: ${new Date(station.lastUpdate).toLocaleString()}</p>
+                </div>
+            `).join('');
+
+            // Add click event listeners to station cards
+            const stationCards = document.querySelectorAll('.station-card');
+            stationCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const stationId = card.dataset.stationId;
+                    const station = stations.find(s => s.id === stationId);
+                    if (station) {
+                        map.setView(station.coordinates, 15); // Zoom level 15 for closer view
+                        markers.get(stationId).openPopup();
+                    }
+                });
+                
+                // Add hover style to indicate clickability
+                card.style.cursor = 'pointer';
+            });
+        }
+
+        // Routing functions
+        async function tryRoute(waypoints) {
+            const waypointStr = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
+            try {
+                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${waypointStr}?overview=full&geometries=geojson`);
+                if (!response.ok) throw new Error('Failed to fetch route');
+
+                const data = await response.json();
+                if (!data.routes || data.routes.length === 0) throw new Error('No route found');
+
+                const coordinates = data.routes[0].geometry.coordinates;
+                const route = coordinates.map(coord => L.latLng(coord[1], coord[0]));
+
+                if (isRouteCrossingFloodedArea(route)) {
+                    return { success: false };
+                }
+
+                return {
+                    success: true,
+                    route,
+                    distance: data.routes[0].distance,
+                    duration: data.routes[0].duration
+                };
+            } catch (err) {
+                console.error('Route attempt failed:', err);
+                return { success: false };
+            }
+        }
+
+        function isRouteCrossingFloodedArea(route) {
+            return stations.some(station => {
+                if (station.status !== 'normal') {
+                    return route.some(point => {
+                        const distance = map.distance(point, L.latLng(station.coordinates));
+                        return distance < 250; // 250 meters radius around flooded stations
+                    });
+                }
+                return false;
+            });
+        }
+
+        async function findSafeRoute(start, end) {
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            // Try direct route first
+            const directResult = await tryRoute([start, end]);
+            if (directResult.success) {
+                routingControl = L.Routing.control({
+                    waypoints: [
+                        L.latLng(start.lat, start.lng),
+                        L.latLng(end.lat, end.lng)
+                    ],
+                    router: L.Routing.osrmv1({
+                        serviceUrl: 'https://router.project-osrm.org/route/v1'
+                    }),
+                    lineOptions: {
+                        styles: [{ color: '#000000', weight: 4 }]
+                    },
+                    addWaypoints: false,
+                    draggableWaypoints: false,
+                    fitSelectedRoutes: true,
+                    createMarker: function () { return null; }
+                }).addTo(map);
+
+                document.getElementById('loading-overlay').style.display = 'none';
+                return;
+            }
+
+            // Try finding alternative routes
+            const floodedStations = stations.filter(s => s.status !== 'normal');
+            const radiusStep = 0.005; // roughly 500 meters
+            const maxRadius = 0.05; // roughly 5km
+
+            for (let radius = radiusStep; radius <= maxRadius; radius += radiusStep) {
+                for (const station of floodedStations) {
+                    const angles = Array.from({ length: 36 }, (_, i) => i * 10); // Try 36 directions
+
+                    for (const angle of angles) {
+                        const lat = station.coordinates[0] + radius * Math.cos(angle * Math.PI / 180);
+                        const lng = station.coordinates[1] + radius * Math.sin(angle * Math.PI / 180);
+                        const waypoint = L.latLng(lat, lng);
+
+                        const alternativeResult = await tryRoute([start, waypoint, end]);
+                        if (alternativeResult.success) {
+                            routingControl = L.Routing.control({
+                                waypoints: [
+                                    L.latLng(start.lat, start.lng),
+                                    waypoint,
+                                    L.latLng(end.lat, end.lng)
+                                ],
+                                router: L.Routing.osrmv1({
+                                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                                }),
+                                lineOptions: {
+                                    styles: [{ color: '#000000', weight: 4 }]
+                                },
+                                addWaypoints: false,
+                                draggableWaypoints: false,
+                                fitSelectedRoutes: true,
+                                createMarker: function () { return null; }
+                            }).addTo(map);
+
+                            document.getElementById('loading-overlay').style.display = 'none';
+                            return;
+                        }
+                    }
+                }
+            }
+
+            document.getElementById('loading-overlay').style.display = 'none';
+            alert('Unable to find a safe route. All possible routes cross flooded areas.');
+        }
+
+        // Add this function to periodically fetch station updates
+        async function fetchStationUpdates() {
+            for (const station of stations) {
+                try {
+                    const stationNum = parseInt(station.id.split('-')[1]) - 1;
+                    const response = await fetch(`http://localhost:5501/get-station-status?s=${stationNum}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Received station update:', data); // Debug logging
+                    
+                    if (data.success && data.data) {
+                        // Update local station data
+                        station.status = data.data.status;
+                        station.lastUpdate = data.data.lastUpdate;
+                        
+                        // Update marker and UI
+                        const marker = markers.get(station.id);
+                        if (marker) {
+                            marker.setIcon(stationIcons[station.status]);
+                            marker.getPopup().setContent(`<b>${station.name}</b><br>Status: ${station.status}`);
+                        }
+
+                        // Update flood circles
+                        map.eachLayer((layer) => {
+                            if (layer instanceof L.Circle && 
+                                layer.getLatLng().lat === station.coordinates[0] && 
+                                layer.getLatLng().lng === station.coordinates[1]) {
+                                map.removeLayer(layer);
+                            }
+                        });
+
+                        if (station.status !== 'normal') {
+                            L.circle(station.coordinates, {
+                                color: station.status === 'warning' ? 'orange' : 'red',
+                                fillColor: station.status === 'warning' ? '#ff9800' : '#f03',
+                                fillOpacity: 0.5,
+                                radius: 250
+                            }).addTo(map);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Failed to fetch updates for ${station.id}:`, error);
+                }
+            }
+            // Update the UI
+            updateStatusPanel();
+            updateStationControls();
+        }
+
+        // Modify the initialization to start polling for updates
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeStations();
+            updateStationControls();
+            
+            // Start polling for updates every 5 seconds
+            setInterval(fetchStationUpdates, 5000);
+        });
+
+        // Modify updateStationStatus to include better error handling
+        async function updateStationStatus(stationId) {
+            const station = stations.find(s => s.id === stationId);
+            if (!station) return;
+
+            // Convert station ID and status to numbers
+            const stationNum = parseInt(stationId.split('-')[1]) - 1; // station-1 becomes 0
+            const statusNum = station.status === 'normal' ? 0 : 
+                             station.status === 'warning' ? 1 : 2;
+
+            try {
+                console.log('Sending update to server:', {
+                    station: stationNum,
+                    status: statusNum
+                });
+
+                const response = await fetch(`http://localhost:5501/update-station?s=${stationNum}&st=${statusNum}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Server response:', data);
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Update failed');
+                }
+
+                // Update UI immediately after successful server update
+                updateStatusPanel();
+                updateStationControls();
+                
+            } catch (error) {
+                console.error('Failed to update station status:', error);
+                alert('Failed to update station status. Please try again.');
+            }
+        }
+
+        // Modify the toggleStationStatus function
+        function toggleStationStatus(stationId) {
+            const station = stations.find(s => s.id === stationId);
+            if (!station) return;
+
+            // Update the status
+            switch (station.status) {
+                case 'normal':
+                    station.status = 'warning';
+                    break;
+                case 'warning':
+                    station.status = 'emergency';
+                    break;
+                case 'emergency':
+                    station.status = 'normal';
+                    break;
+            }
+
+            station.lastUpdate = new Date().toISOString();
+            
+            // Update the server with the new status
+            updateStationStatus(stationId);
+
+            // Show alert banner
+            if (station.status !== 'normal') {
+                const alert = document.createElement('div');
+                alert.className = 'alert-banner';
+                alert.textContent = `⚠️ Alert: ${station.name} reporting ${station.status} status!`;
+                document.body.appendChild(alert);
+                setTimeout(() => alert.remove(), 5000);
+            }
+
+            // Update the controls
+            updateStationControls();
+        }
+
+        function updateStationControls() {
+            const controlsContainer = document.getElementById('station-controls');
+            controlsContainer.innerHTML = `
+                <button class="close-btn">×</button>
+                ${stations.map(station => `
+                    <button 
+                        class="station-toggle-btn ${station.status !== 'normal' ? station.status : ''}"
+                        onclick="toggleStationStatus('${station.id}')"
+                    >
+                        <span>${station.name}</span>
+                        <span class="status-text">${
+                            station.status === 'normal' ? 'Normal' : 
+                            station.status === 'warning' ? 'Warning' : 
+                            'Emergency'
+                        }</span>
+                    </button>
+                `).join('')}
+            `;
+
+            // Add click handler for close button
+            const closeBtn = controlsContainer.querySelector('.close-btn');
+            closeBtn.addEventListener('click', () => {
+                controlsContainer.classList.remove('active');
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('pin-destination-btn').addEventListener('click', () => {
+            if (endMarker) {
+                alert('Destination already pinned. Drag the marker to adjust.');
+                return;
+            }
+
+            const center = map.getCenter();
+            // Check if destination is in flooded area
+            const isInFloodedArea = stations.some(station => {
+                if (station.status !== 'normal') {
+                    const distance = map.distance(center, L.latLng(station.coordinates));
+                    return distance < 250; // 250 meters radius around flooded stations
+                }
+                return false;
+            });
+
+            if (isInFloodedArea) {
+                alert('Cannot set destination in a flooded area. Please choose a different location.');
+                return;
+            }
+
+            endMarker = L.marker(center, { 
+                draggable: true,
+                icon: endIcon
+            })
+                .addTo(map)
+                .bindPopup("Destination")
+                .openPopup();
+
+            // Add dragend event to check new position
+            endMarker.on('dragend', function(event) {
+                const marker = event.target;
+                const position = marker.getLatLng();
+                
+                const isInFloodedArea = stations.some(station => {
+                    if (station.status !== 'normal') {
+                        const distance = map.distance(position, L.latLng(station.coordinates));
+                        return distance < 250;
+                    }
+                    return false;
+                });
+
+                if (isInFloodedArea) {
+                    alert('Cannot place destination in a flooded area. Please choose a different location.');
+                    map.removeLayer(marker);
+                    endMarker = null;
+                }
+            });
+        });
+
+        document.getElementById('route-btn').addEventListener('click', () => {
+            if (!startMarker || !endMarker) {
+                alert('Please set both start and destination points.');
+                return;
+            }
+
+            const endPosition = endMarker.getLatLng();
+            const isInFloodedArea = stations.some(station => {
+                if (station.status !== 'normal') {
+                    const distance = map.distance(endPosition, L.latLng(station.coordinates));
+                    return distance < 250;
+                }
+                return false;
+            });
+
+            if (isInFloodedArea) {
+                alert('Cannot route to a destination in a flooded area. Please choose a different destination.');
+                return;
+            }
+
+            findSafeRoute(startMarker.getLatLng(), endMarker.getLatLng());
+        });
+
+        document.getElementById('simulate-flood').addEventListener('click', () => {
+            const controlsElement = document.getElementById('station-controls');
+            controlsElement.classList.toggle('active');
+            if (controlsElement.classList.contains('active')) {
+                updateStationControls();
+            }
+        });
+
+        // Get user location
+        navigator.geolocation.getCurrentPosition(position => {
+            const { latitude, longitude } = position.coords;
+            startMarker = L.marker([latitude, longitude], { 
+                draggable: true,
+                icon: startIcon
+            })
+                .addTo(map)
+                .bindPopup("Current Location")
+                .openPopup();
+            map.setView([latitude, longitude], 13);
+        }, error => {
+            console.error("Geolocation failed:", error);
+            const fallbackCoords = [15.024505, 120.680464];
+            startMarker = L.marker(fallbackCoords, { 
+                draggable: true,
+                icon: startIcon
+            })
+                .addTo(map)
+                .bindPopup("Fallback Location")
+                .openPopup();
+            map.setView(fallbackCoords, 13);
+            alert("Unable to access your location. Using default location.");
+        });
+
+        // Make routing container draggable
+        const dragBar = document.querySelector('.drag-bar');
+        const routeContainer = document.querySelector('.leaflet-routing-container');
+
+        let isDragging = false;
+        let startY;
+
+        dragBar.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            document.body.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const diffY = e.clientY - startY;
+            const newHeight = Math.max(routeContainer.offsetHeight - diffY, 30);
+            routeContainer.style.height = `${newHeight}px`;
+            startY = e.clientY;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            document.body.style.cursor = 'default';
+        });
+    </script>
+</body>
+
+</html>
