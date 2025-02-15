@@ -1,13 +1,19 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const app = express();
 
-// Enable CORS with specific options
+// Enable CORS with more secure options
 app.use(cors({
-    origin: '*', // Be more specific in production
+    origin: process.env.NODE_ENV === 'production' 
+        ? ['https://your-frontend-domain.onrender.com'] // Replace with your actual domain
+        : '*',
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type']
 }));
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Store station statuses in memory
 const stationStatuses = new Map();
@@ -57,8 +63,13 @@ app.get('/test', (req, res) => {
     res.json({ status: 'Server is running' });
 });
 
+// Catch-all route to serve index.html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Start the server
-const PORT = 5501;
+const PORT = process.env.PORT || 5501;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 }); 

@@ -315,7 +315,10 @@
             for (const station of stations) {
                 try {
                     const stationNum = parseInt(station.id.split('-')[1]) - 1;
-                    const response = await fetch(`http://localhost:5501/get-station-status?s=${stationNum}`);
+                    const API_URL = window.location.hostname === 'localhost' 
+                        ? 'http://localhost:5501'
+                        : 'https://your-backend-domain.onrender.com';
+                    const response = await fetch(`${API_URL}/get-station-status?s=${stationNum}`);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
@@ -387,7 +390,10 @@
                     status: statusNum
                 });
 
-                const response = await fetch(`http://localhost:5501/update-station?s=${stationNum}&st=${statusNum}`, {
+                const API_URL = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:5501'
+                    : 'https://your-backend-domain.onrender.com';
+                const response = await fetch(`${API_URL}/update-station?s=${stationNum}&st=${statusNum}`, {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json'
