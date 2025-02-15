@@ -6,7 +6,7 @@ const app = express();
 // Enable CORS with more secure options
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? ['https://your-frontend-domain.onrender.com'] // Replace with your actual domain
+        ? ['https://alarma.onrender.com'] // Replace with your actual domain
         : '*',
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type']

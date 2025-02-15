@@ -32,10 +32,10 @@
 </head>
 
 <body>
-    <button id="toggle-sidebar"><img id="menu" src="public/img/menu.svg"></button>
+    <button id="toggle-sidebar"><img id="menu" src="public/menu.svg"></button>
     <div id="sidebar">
         <div id="sidebar-header">
-            <img id="logo" src="/public/icons/alarma-logo-text.svg" alt="ALARMA Logo">
+            <img id="logo" src="/public/alarma-logo-text.svg" alt="ALARMA Logo">
         </div>
         <div id="station-container">
             <!-- Station cards will be dynamically inserted here -->
@@ -44,9 +44,9 @@
     <div id="map-container">
         <div id="map"></div>
         <div id="bottom-dock">
-            <button id="pin-destination-btn" class="dock-btn"><img src="/public/img/pin.svg"><span class="button-descriptions">Pin Destination</span></button>
-            <button id="route-btn" class="dock-btn"><img src="/public/img/route.svg"><span class="button-descriptions">Find Safe Route</span></button>
-            <button id="simulate-flood" class="dock-btn warning"><img src="/public/img/flood.svg"><span class="button-descriptions">Simulate Flood</span></button>
+            <button id="pin-destination-btn" class="dock-btn"><img src="/public/pin.svg"><span class="button-descriptions">Pin Destination</span></button>
+            <button id="route-btn" class="dock-btn"><img src="/public/route.svg"><span class="button-descriptions">Find Safe Route</span></button>
+            <button id="simulate-flood" class="dock-btn warning"><img src="/public/flood.svg"><span class="button-descriptions">Simulate Flood</span></button>
         </div>
     </div>
     <div id="loading-overlay">
@@ -109,13 +109,13 @@
 
         // Add custom start and end icons
         const startIcon = L.icon({
-            iconUrl: '/public/img/start.svg',
+            iconUrl: '/public/start.svg',
             iconSize: [36, 36],
             iconAnchor: [24, 48]
         });
 
         const endIcon = L.icon({
-            iconUrl: '/public/img/end.svg',
+            iconUrl: '/public/end.svg',
             iconSize: [36, 36],
             iconAnchor: [24, 48]
         });
@@ -130,17 +130,17 @@
         const markers = new Map();
         const stationIcons = {
             normal: L.icon({
-                iconUrl: '/public/img/station3.svg',
+                iconUrl: '/public/station3.svg',
                 iconSize: [48, 48],
                 iconAnchor: [16, 32, 48]
             }),
             warning: L.icon({
-                iconUrl: '/public/img/warning.svg',
+                iconUrl: '/public/warning.svg',
                 iconSize: [48, 48],
                 iconAnchor: [16, 32, 48]
             }),
             emergency: L.icon({
-                iconUrl: '/public/img/flooded.svg',
+                iconUrl: '/public/flooded.svg',
                 iconSize: [48, 48],
                 iconAnchor: [16, 32, 48]
             })
@@ -317,7 +317,7 @@
                     const stationNum = parseInt(station.id.split('-')[1]) - 1;
                     const API_URL = window.location.hostname === 'localhost' 
                         ? 'http://localhost:5501'
-                        : 'https://your-backend-domain.onrender.com';
+                        : 'https://alarma.onrender.com';
                     const response = await fetch(`${API_URL}/get-station-status?s=${stationNum}`);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
