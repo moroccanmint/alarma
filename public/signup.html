@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALARMA - Sign Up</title>
+    <link rel="apple-touch-icon" sizes="57x57" href="icons/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="icons/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="icons/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="icons/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="icons/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="icons/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="icons/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #1a73e8;
+            --warning-color: #ff9800;
+            --emergency-color: #f44336;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgb(0, 0, 0);
+        }
+
+        .signup-container {
+            background: rgb(44, 44, 44);
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            width: 200px;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        p {
+            color: #bababa;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .phone-input-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .phone-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .phone-input:focus {
+            border-color: var(--primary-blue);
+        }
+
+        .submit-btn {
+            background: black;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #333;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            color: var(--emergency-color);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        #otp-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .otp-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .otp-input-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .otp-input {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .otp-input:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+        }
+
+        .otp-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        #verify-otp-btn {
+            background: black;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        #resend-otp-btn {
+            background: none;
+            border: none;
+            color: var(--primary-blue);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        #resend-otp-btn:disabled {
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        #resend-timer {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="signup-container">
+        <img src="alarma-logo-text.svg" alt="ALARMA Logo" class="logo">
+        <h1>Sign up for ALARMA</h1>
+        <p>Enter your phone number to receive updates and alerts</p>
+        <form id="signup-form">
+            <div class="phone-input-container">
+                <input type="tel" id="phone" class="phone-input" placeholder="+63 XXX XXX XXXX" required>
+                <div class="error-message" id="error-message">Please enter a valid phone number</div>
+            </div>
+            <button type="submit" class="submit-btn">Continue</button>
+        </form>
+    </div>
+
+    <div id="otp-overlay">
+        <div class="otp-container">
+            <h2>Verify Your Phone</h2>
+            <p>Enter the 6-digit code sent to your phone</p>
+            <div class="otp-input-container">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+            </div>
+            <div class="otp-actions">
+                <button id="verify-otp-btn">Verify</button>
+                <button id="resend-otp-btn">Resend Code</button>
+                <span id="resend-timer"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Reference to your OTP handling code
+        const otpInputs = document.querySelectorAll('.otp-input');
+        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const resendOtpBtn = document.getElementById('resend-otp-btn');
+        const resendTimer = document.getElementById('resend-timer');
+        let resendTimeout = 30;
+        let resendInterval;
+
+        // Handle phone number submission
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phoneNumber = document.getElementById('phone').value;
+
+            // Basic phone number validation
+            const phoneRegex = /^\+?([0-9]{2})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
+            if (!phoneRegex.test(phoneNumber)) {
+                document.getElementById('error-message').style.display = 'block';
+                return;
+            }
+
+            // Show OTP overlay
+            document.getElementById('otp-overlay').style.display = 'flex';
+            startResendTimer();
+
+            // Here you would integrate with your backend to send OTP
+            try {
+                // Simulate API call
+                console.log('Sending OTP to:', phoneNumber);
+                // await sendOTP(phoneNumber);
+            } catch (error) {
+                console.error('Error sending OTP:', error);
+            }
+        });
+
+        // Handle OTP input behavior
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1) {
+                    if (index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value) {
+                    if (index > 0) {
+                        otpInputs[index - 1].focus();
+                    }
+                }
+            });
+
+            input.addEventListener('keypress', (e) => {
+                if (!/^\d$/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        function startResendTimer() {
+            resendOtpBtn.disabled = true;
+            let timeLeft = resendTimeout;
+
+            resendInterval = setInterval(() => {
+                timeLeft--;
+                resendTimer.textContent = `Resend in ${timeLeft}s`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(resendInterval);
+                    resendOtpBtn.disabled = false;
+                    resendTimer.textContent = '';
+                }
+            }, 1000);
+        }
+
+        verifyOtpBtn.addEventListener('click', async () => {
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
+            if (otp.length !== 6) {
+                alert('Please enter a valid 6-digit code');
+                return;
+            }
+
+            try {
+                // Here you would verify the OTP with your backend
+                console.log('Verifying OTP:', otp);
+                // If successful, redirect to main app
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Error verifying OTP:', error);
+                alert('Invalid OTP. Please try again.');
+            }
+        });
+
+        resendOtpBtn.addEventListener('click', () => {
+            const phoneNumber = document.getElementById('phone').value;
+            // Here you would resend the OTP
+            console.log('Resending OTP to:', phoneNumber);
+            startResendTimer();
+        });
+    </script>
+</body>
+
+</html>
