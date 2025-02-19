@@ -29,13 +29,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    
+    <!-- Add Firebase SDKs before your other scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    
+    <!-- Initialize Firebase -->
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBgH6ZJ1KgMkitKcL7YnigNm1r1P_Dr5Rs",
+            authDomain: "alarma-5c1e2.firebaseapp.com",
+            projectId: "alarma-5c1e2",
+            storageBucket: "alarma-5c1e2.firebasestorage.app",
+            messagingSenderId: "941557402373",
+            appId: "1:941557402373:web:4ea380076722da1620056c",
+            measurementId: "G-7CM36MZG1K"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
 </head>
 
 <body>
-    <button id="toggle-sidebar"><img id="menu" src="/menu.svg"></button>
+    <button id="toggle-sidebar"><img id="menu" src="menu.svg"></button>
     <div id="sidebar">
         <div id="sidebar-header">
-            <img id="logo" src="/alarma-logo-text.svg" alt="ALARMA Logo">
+            <img id="logo" src="alarma-logo-text.svg" alt="ALARMA Logo">
         </div>
         <div id="station-container">
             <!-- Station cards will be dynamically inserted here -->
@@ -44,14 +65,14 @@
     <div id="map-container">
         <div id="map"></div>
         <div id="bottom-dock">
-            <button id="pin-destination-btn" class="dock-btn"><img src="/pin.svg"><span class="button-descriptions">Pin Destination</span></button>
-            <button id="route-btn" class="dock-btn"><img src="/route.svg"><span class="button-descriptions">Find Safe Route</span></button>
-            <button id="simulate-flood" class="dock-btn warning"><img src="/flood.svg"><span class="button-descriptions">Simulate Flood</span></button>
+            <button id="pin-destination-btn" class="dock-btn"><img src="pin.svg"><span class="button-descriptions">Pin Destination</span></button>
+            <button id="route-btn" class="dock-btn"><img src="route.svg"><span class="button-descriptions">Find Safe Route</span></button>
+            <button id="simulate-flood" class="dock-btn warning"><img src="flood.svg"><span class="button-descriptions">Simulate Flood</span></button>
         </div>
     </div>
     <div id="loading-overlay">
         <div class="spinner">
-            <img src="/icons/alarma-logo.png" alt="Loading...">
+            <img src="icons/alarma-logo.png" alt="Loading...">
         </div>
     </div>
     <div class="station-controls" id="station-controls">
@@ -107,18 +128,42 @@
             }
         ];
 
-        // Add custom start and end icons
+        // Update icon configurations
         const startIcon = L.icon({
-            iconUrl: '/start.svg',
+            iconUrl: 'start.svg',
             iconSize: [36, 36],
-            iconAnchor: [24, 48]
+            iconAnchor: [18, 36],
+            popupAnchor: [0, -36]
         });
 
         const endIcon = L.icon({
-            iconUrl: '/end.svg',
+            iconUrl: 'end.svg',
             iconSize: [36, 36],
-            iconAnchor: [24, 48]
+            iconAnchor: [18, 36],
+            popupAnchor: [0, -36]
         });
+
+        // Update station icons as well for consistency
+        const stationIcons = {
+            normal: L.icon({
+                iconUrl: 'station3.svg',
+                iconSize: [48, 48],
+                iconAnchor: [24, 24],
+                popupAnchor: [0, -24]
+            }),
+            warning: L.icon({
+                iconUrl: 'warning.svg',
+                iconSize: [48, 48],
+                iconAnchor: [24, 24],
+                popupAnchor: [0, -24]
+            }),
+            emergency: L.icon({
+                iconUrl: 'flooded.svg',
+                iconSize: [48, 48],
+                iconAnchor: [24, 24],
+                popupAnchor: [0, -24]
+            })
+        };
 
         // Initialize map
         const map = L.map('map').setView([15.024505, 120.680464], 13);
@@ -128,24 +173,6 @@
 
         // Station markers
         const markers = new Map();
-        const stationIcons = {
-            normal: L.icon({
-                iconUrl: '/station3.svg',
-                iconSize: [48, 48],
-                iconAnchor: [16, 32, 48]
-            }),
-            warning: L.icon({
-                iconUrl: '/warning.svg',
-                iconSize: [48, 48],
-                iconAnchor: [16, 32, 48]
-            }),
-            emergency: L.icon({
-                iconUrl: '/flooded.svg',
-                iconSize: [48, 48],
-                iconAnchor: [16, 32, 48]
-            })
-        };
-
         let startMarker, endMarker;
         let routingControl = null;
 
@@ -315,10 +342,17 @@
             for (const station of stations) {
                 try {
                     const stationNum = parseInt(station.id.split('-')[1]) - 1;
-                    const API_URL = window.location.hostname === 'localhost' 
+                    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
                         ? 'http://localhost:5501'
                         : 'https://alarma.onrender.com';
-                    const response = await fetch(`${API_URL}/get-station-status?s=${stationNum}`);
+                    
+                    const response = await fetch(`${API_URL}/get-station-status?s=${stationNum}`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${window.authToken}`
+                        },
+                        credentials: 'include'
+                    });
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
@@ -367,11 +401,22 @@
 
         // Modify the initialization to start polling for updates
         document.addEventListener('DOMContentLoaded', () => {
-            initializeStations();
-            updateStationControls();
-            
-            // Start polling for updates every 5 seconds
-            setInterval(fetchStationUpdates, 5000);
+            // Check authentication status
+            firebase.auth().onAuthStateChanged((user) => {
+                if (!user) {
+                    // Redirect to signup if not authenticated
+                    window.location.href = '/signup.html';
+                    return;
+                }
+                
+                // User is authenticated, initialize app
+                user.getIdToken().then(token => {
+                    window.authToken = token;
+                    initializeStations();
+                    updateStationControls();
+                    setInterval(fetchStationUpdates, 5000);
+                });
+            });
         });
 
         // Modify updateStationStatus to include better error handling
