@@ -431,6 +431,50 @@
                 }
             });
         });
+
+        // Add this new function for OTP input handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const otpInputs = document.querySelectorAll('.otp-input');
+            
+            otpInputs.forEach((input, index) => {
+                // Handle input
+                input.addEventListener('input', function(e) {
+                    // Ensure input is only one digit
+                    if (this.value.length > 1) {
+                        this.value = this.value.slice(0, 1);
+                    }
+                    
+                    // Move to next input if available
+                    if (this.value.length === 1 && index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                });
+                
+                // Handle backspace
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !this.value && index > 0) {
+                        // Move to previous input when backspace is pressed on empty input
+                        otpInputs[index - 1].focus();
+                    }
+                });
+                
+                // Handle paste
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text').trim();
+                    
+                    // If pasted data matches OTP format (6 digits)
+                    if (/^\d{6}$/.test(pastedData)) {
+                        // Distribute digits across inputs
+                        otpInputs.forEach((input, i) => {
+                            input.value = pastedData[i];
+                        });
+                        // Focus last input
+                        otpInputs[otpInputs.length - 1].focus();
+                    }
+                });
+            });
+        });
     </script>
 </body>
 

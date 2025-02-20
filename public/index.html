@@ -61,6 +61,11 @@
         <div id="station-container">
             <!-- Station cards will be dynamically inserted here -->
         </div>
+        <div id="user-info">
+            <p id="phone-display">An SMS alert will be sent to your registered phone number: <span
+                    id="user-phone">Loading...</span></p>
+            <button id="logout-btn">Logout</button>
+        </div>
     </div>
     <div id="map-container">
         <div id="map"></div>
@@ -405,9 +410,13 @@
             firebase.auth().onAuthStateChanged((user) => {
                 if (!user) {
                     // Redirect to signup if not authenticated
-                    window.location.href = '/signup.html';
+                    window.location.href = './signup.html';
                     return;
                 }
+                
+                // Update phone number display
+                const phoneSpan = document.getElementById('user-phone');
+                phoneSpan.textContent = user.phoneNumber || 'Not available';
                 
                 // User is authenticated, initialize app
                 user.getIdToken().then(token => {
@@ -415,6 +424,17 @@
                     initializeStations();
                     updateStationControls();
                     setInterval(fetchStationUpdates, 5000);
+                });
+            });
+
+            // Add logout button handler
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                firebase.auth().signOut().then(() => {
+                    // Redirect to signup page after successful logout
+                    window.location.href = './signup.html';
+                }).catch((error) => {
+                    console.error('Error signing out:', error);
+                    alert('Error signing out. Please try again.');
                 });
             });
         });
@@ -660,6 +680,28 @@
             isDragging = false;
             document.body.style.cursor = 'default';
         });
+
+        // Update the formatPhoneNumber function
+        function formatPhoneNumber(phoneNumber) {
+            // Remove all non-digit characters
+            const cleaned = phoneNumber.replace(/\D/g, '');
+            
+            // Handle numbers starting with 09 or 9
+            if (cleaned.startsWith('09')) {
+                return '+63' + cleaned.substring(1);
+            } else if (cleaned.startsWith('9')) {
+                return '+63' + cleaned;
+            }
+            return null;
+        }
+        
+        // Update the validation function
+        function isValidPhoneNumber(phoneNumber) {
+            // Check if it's a valid Philippine mobile number (09XXXXXXXXX or 9XXXXXXXXX)
+            const localFormat = phoneNumber.replace(/\D/g, '');
+            const isValid = /^(09|\+639|9)\d{9}$/.test(localFormat);
+            return isValid;
+        }
     </script>
 </body>
 

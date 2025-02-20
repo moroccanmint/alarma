@@ -100,7 +100,7 @@ body {
     background: rgb(254, 254, 254);
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 12px;
-    padding: 1.25rem;
+    padding: 1rem;
     margin-bottom: 1rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     transition: all 0.3s ease;
@@ -741,4 +741,59 @@ body {
 
 .leaflet-routing-alt tr:last-child td {
     border-bottom: none;
+}
+
+/* User info section styles */
+#user-info {
+    padding: 1rem;
+    background: rgba(19, 19, 19, 0.95);
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#phone-display {
+    color: #bababa;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    text-align: center;
+    justify-content: center;
+}
+
+#user-phone {
+    color: white;
+    font-weight: 500;
+    font-size: larger;
+    display: flex;
+    text-align: center;
+    margin-top: 0.5rem;
+    justify-content: center;
+    align-items: center;
+}
+
+#logout-btn {
+    background: black;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+#logout-btn:hover {
+    background: #333;
+}
+
+/* Mobile responsiveness for user info */
+@media (max-width: 1024px) {
+    #user-info {
+        padding: 1rem;
+    }
+    
+    #phone-display {
+        font-size: 0.85rem;
+    }
 }
