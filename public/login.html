@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALARMA - Login</title>
+    <!-- Include the same meta tags, icons, and styles from signup.html -->
+    <link rel="apple-touch-icon" sizes="57x57" href="icons/apple-icon-57x57.png">
+    <!-- ... other icon links ... -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Copy the styles from signup.html and modify as needed */
+        :root {
+            --primary-blue: #1a73e8;
+            --warning-color: #ff9800;
+            --emergency-color: #f44336;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgb(0, 0, 0);
+        }
+
+        .login-container {
+            background: rgb(44, 44, 44);
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            width: 200px;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        p {
+            color: #bababa;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .email-input-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary-blue);
+        }
+
+        .submit-btn {
+            background: black;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #333;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            color: var(--emergency-color);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        #otp-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .otp-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .otp-input-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .otp-input {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .otp-input:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+        }
+
+        .otp-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        #verify-otp-btn {
+            background: black;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        #resend-otp-btn {
+            background: none;
+            border: none;
+            color: var(--primary-blue);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        #resend-otp-btn:disabled {
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        #resend-timer {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .password-input-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .login-link {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .login-link a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .signup-link {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #bababa;
+        }
+
+        .signup-link a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    
+    <!-- Add Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+                apiKey: "AIzaSyBgH6ZJ1KgMkitKcL7YnigNm1r1P_Dr5Rs",
+                authDomain: "alarma-5c1e2.firebaseapp.com",
+                projectId: "alarma-5c1e2",
+                storageBucket: "alarma-5c1e2.firebasestorage.app",
+                messagingSenderId: "941557402373",
+                appId: "1:941557402373:web:4ea380076722da1620056c",
+                measurementId: "G-7CM36MZG1K"
+            };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+    </script>
+</head>
+
+<body>
+    <div class="login-container">
+        <img src="alarma-logo-text.svg" alt="ALARMA Logo" class="logo">
+        <h1>Login to ALARMA</h1>
+        <p>Enter your email and password</p>
+        <form id="login-form">
+            <div class="email-input-container">
+                <input type="email" id="email" class="input-field" placeholder="Enter email" required>
+                <div class="error-message" id="email-error"></div>
+            </div>
+            <div class="password-input-container">
+                <input type="password" id="password" class="input-field" placeholder="Enter password" required>
+                <div class="error-message" id="password-error"></div>
+            </div>
+            <button type="submit" class="submit-btn">Login</button>
+            <p class="signup-link">Don't have an account? <a href="./signup.html">Sign up here</a></p>
+        </form>
+    </div>
+    <div id="recaptcha-container"></div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const emailError = document.getElementById('email-error');
+            const passwordError = document.getElementById('password-error');
+            const submitBtn = document.querySelector('.submit-btn');
+            
+            try {
+                // Reset error messages
+                emailError.style.display = 'none';
+                passwordError.style.display = 'none';
+                
+                // Disable submit button and show loading state
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Logging in...';
+                
+                // Sign in with email and password
+                await auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value);
+                
+                // Redirect to main app
+                window.location.href = '/public/index.html';
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                let errorMsg;
+                
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMsg = 'Invalid email format';
+                        emailError.textContent = errorMsg;
+                        emailError.style.display = 'block';
+                        break;
+                    case 'auth/user-not-found':
+                        errorMsg = 'No account found with this email';
+                        emailError.textContent = errorMsg;
+                        emailError.style.display = 'block';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMsg = 'Incorrect password';
+                        passwordError.textContent = errorMsg;
+                        passwordError.style.display = 'block';
+                        break;
+                    default:
+                        errorMsg = 'Invalid email or password';
+                        emailError.textContent = errorMsg;
+                        emailError.style.display = 'block';
+                }
+                
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Login';
+            }
+        });
+
+        // Initialize reCAPTCHA when page loads
+        let appVerifier;
+        window.onload = function() {
+            initializeRecaptcha();
+        };
+        
+        function initializeRecaptcha() {
+            try {
+                if (appVerifier) {
+                    appVerifier.clear();
+                }
+                
+                // Add recaptcha container if it doesn't exist
+                if (!document.getElementById('recaptcha-container')) {
+                    const container = document.createElement('div');
+                    container.id = 'recaptcha-container';
+                    document.body.appendChild(container);
+                }
+                
+                appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                    'size': 'invisible',
+                    'callback': (response) => {
+                        console.log('reCAPTCHA verified');
+                    },
+                    'expired-callback': () => {
+                        console.log('reCAPTCHA expired');
+                        appVerifier.reset();
+                        initializeRecaptcha();
+                    }
+                });
+                
+                appVerifier.render().then(function(widgetId) {
+                    window.recaptchaWidgetId = widgetId;
+                    console.log('reCAPTCHA rendered successfully');
+                });
+            } catch (error) {
+                console.error('Error initializing reCAPTCHA:', error);
+            }
+        }
+
+        // Phone number formatting function (copy from signup.html)
+        function formatPhoneNumber(phoneNumber) {
+            const cleaned = phoneNumber.replace(/\D/g, '');
+            if (cleaned.startsWith('0')) {
+                return '+63' + cleaned.substring(1);
+            } else if (!cleaned.startsWith('63')) {
+                return '+63' + cleaned;
+            }
+            return '+' + cleaned;
+        }
+
+        // Phone validation function (copy from signup.html)
+        function isValidPhoneNumber(phoneNumber) {
+            const phoneRegex = /^\+?63[0-9]{10}$/;
+            return phoneRegex.test(phoneNumber);
+        }
+    </script>
+</body>
+
+</html> 

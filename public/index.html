@@ -33,6 +33,7 @@
     <!-- Add Firebase SDKs before your other scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     
     <!-- Initialize Firebase -->
     <script>
@@ -49,6 +50,7 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
     </script>
 </head>
 
@@ -62,8 +64,7 @@
             <!-- Station cards will be dynamically inserted here -->
         </div>
         <div id="user-info">
-            <p id="phone-display">An SMS alert will be sent to your registered phone number: <span
-                    id="user-phone">Loading...</span></p>
+            <p id="phone-display">An SMS alert will be sent to your registered phone number: <span id="user-phone">Loading...</span></p>
             <button id="logout-btn">Logout</button>
         </div>
     </div>
@@ -471,9 +472,21 @@
                     return;
                 }
                 
-                const phoneSpan = document.getElementById('user-phone');
-                phoneSpan.textContent = user.phoneNumber || 'Not available';
-                
+                // Fetch user data from Firestore to get the phone number
+                db.collection('users').doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            const phoneSpan = document.getElementById('user-phone');
+                            phoneSpan.textContent = userData.phoneNumber || 'Not available';
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error fetching user data:', error);
+                        const phoneSpan = document.getElementById('user-phone');
+                        phoneSpan.textContent = 'Error loading phone number';
+                    });
+
                 user.getIdToken().then(token => {
                     window.authToken = token;
                     initializeStations();
