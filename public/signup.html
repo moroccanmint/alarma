@@ -198,6 +198,7 @@
     <!-- Add Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     
     <script>
         // Your web app's Firebase configuration
@@ -371,10 +372,14 @@
                 
                 // Sign in with credential
                 const userCredential = await auth.signInWithCredential(credential);
-                
-                // Store user data if needed
                 const user = userCredential.user;
-                localStorage.setItem('userId', user.uid);
+                
+                // Store user data in Firestore
+                await firebase.firestore().collection('users').doc(user.uid).set({
+                    phoneNumber: user.phoneNumber,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                });
                 
                 // Success! Redirect to main app
                 window.location.href = '/public/index.html';

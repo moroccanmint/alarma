@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ALARMA API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ALARMA API Test Page</h1>
+    
+    <button class="test-button" onclick="testSMS()">Test SMS</button>
+    <button class="test-button" onclick="testStationUpdate()">Test Station Update</button>
+    <button class="test-button" onclick="testStationStatus()">Test Station Status</button>
+    
+    <div class="result" id="result">
+        Results will appear here...
+    </div>
+
+    <script>
+        async function testSMS() {
+            try {
+                const response = await fetch('http://localhost:5501/test-sms');
+                const data = await response.json();
+                document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').innerText = 'Error: ' + error.message;
+            }
+        }
+
+        async function testStationUpdate() {
+            try {
+                const response = await fetch('http://localhost:5501/update-station?s=0&st=1');
+                const data = await response.json();
+                document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').innerText = 'Error: ' + error.message;
+            }
+        }
+
+        async function testStationStatus() {
+            try {
+                const response = await fetch('http://localhost:5501/get-station-status?s=0');
+                const data = await response.json();
+                document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').innerText = 'Error: ' + error.message;
+            }
+        }
+
+        async function sendTestSMS() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const message = document.getElementById('message').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!message.trim()) {
+                resultDiv.innerHTML = '<div class="error">Please enter a message</div>';
+                return;
+            }
+
+            try {
+                resultDiv.innerText = 'Sending SMS...';
+                
+                const response = await fetch('/test-sms');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            SMS sent successfully!<br>
+                            To: ${phoneNumber}<br>
+                            Message: ${message}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            Failed to send SMS:<br>
+                            ${data.error || 'Unknown error occurred'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        Error: ${error.message}
+                    </div>
+                `;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html> 
