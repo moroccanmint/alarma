@@ -53,10 +53,10 @@
 </head>
 
 <body>
-    <button id="toggle-sidebar"><img id="menu" src="menu.svg"></button>
+    <button id="toggle-sidebar"><img id="menu" src="/menu.svg"></button>
     <div id="sidebar">
         <div id="sidebar-header">
-            <img id="logo" src="alarma-logo-text.svg" alt="ALARMA Logo">
+            <img id="logo" src="/alarma-logo-text.svg" alt="ALARMA Logo">
         </div>
         <div id="station-container">
             <!-- Station cards will be dynamically inserted here -->
@@ -70,14 +70,14 @@
     <div id="map-container">
         <div id="map"></div>
         <div id="bottom-dock">
-            <button id="pin-destination-btn" class="dock-btn"><img src="pin.svg"><span class="button-descriptions">Pin Destination</span></button>
-            <button id="route-btn" class="dock-btn warning"><img src="route.svg"><span class="button-descriptions">Find Safe Route</span></button>
-            <button id="about-btn" class="dock-btn" onclick="location.href = './about.html'"><img src="about.svg"><span class="button-descriptions">About Alarma</span></button>
+            <button id="pin-destination-btn" class="dock-btn"><img src="/pin.svg"><span class="button-descriptions">Pin Destination</span></button>
+            <button id="route-btn" class="dock-btn warning"><img src="/route.svg"><span class="button-descriptions">Find Safe Route</span></button>
+            <button id="about-btn" class="dock-btn" onclick="location.href = '/about.html'"><img src="/about.svg"><span class="button-descriptions">About Alarma</span></button>
         </div>
     </div>
     <div id="loading-overlay">
         <div class="spinner">
-            <img src="icons/alarma-logo.png" alt="Loading...">
+            <img src="/icons/alarma-logo.png" alt="Loading...">
         </div>
     </div>
     <div class="station-controls" id="station-controls">
@@ -135,14 +135,14 @@
 
         // Update icon configurations
         const startIcon = L.icon({
-            iconUrl: 'start.svg',
+            iconUrl: '/start.svg',
             iconSize: [36, 36],
             iconAnchor: [18, 36],
             popupAnchor: [0, -36]
         });
 
         const endIcon = L.icon({
-            iconUrl: 'end.svg',
+            iconUrl: '/end.svg',
             iconSize: [36, 36],
             iconAnchor: [18, 36],
             popupAnchor: [0, -36]
@@ -151,19 +151,19 @@
         // Update station icons as well for consistency
         const stationIcons = {
             normal: L.icon({
-                iconUrl: 'station3.svg',
+                iconUrl: '/station3.svg',
                 iconSize: [48, 48],
                 iconAnchor: [24, 24],
                 popupAnchor: [0, -24]
             }),
             warning: L.icon({
-                iconUrl: 'warning.svg',
+                iconUrl: '/warning.svg',
                 iconSize: [48, 48],
                 iconAnchor: [24, 24],
                 popupAnchor: [0, -24]
             }),
             emergency: L.icon({
-                iconUrl: 'flooded.svg',
+                iconUrl: '/flooded.svg',
                 iconSize: [48, 48],
                 iconAnchor: [24, 24],
                 popupAnchor: [0, -24]
