@@ -269,18 +269,30 @@
         };
         
         function initializeRecaptcha() {
-            appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    // reCAPTCHA solved
-                    console.log('reCAPTCHA verified');
-                },
-                'expired-callback': () => {
-                    // Reset reCAPTCHA
-                    appVerifier.reset();
-                    initializeRecaptcha();
+            try {
+                if (appVerifier) {
+                    appVerifier.clear();
                 }
-            });
+                
+                appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                    'size': 'invisible',
+                    'callback': (response) => {
+                        console.log('reCAPTCHA verified');
+                    },
+                    'expired-callback': () => {
+                        console.log('reCAPTCHA expired');
+                        appVerifier.reset();
+                        initializeRecaptcha();
+                    }
+                });
+                
+                appVerifier.render().then(function(widgetId) {
+                    window.recaptchaWidgetId = widgetId;
+                    console.log('reCAPTCHA rendered successfully');
+                });
+            } catch (error) {
+                console.error('Error initializing reCAPTCHA:', error);
+            }
         }
         
         // Format phone number to E.164 format
@@ -326,22 +338,53 @@
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Sending code...';
                 
+                console.log('Attempting to send verification code to:', phoneNumber); // Debug log
+                
+                // Make sure reCAPTCHA is properly initialized
+                if (!appVerifier) {
+                    console.log('Reinitializing reCAPTCHA...'); // Debug log
+                    initializeRecaptcha();
+                }
+                
                 // Send verification code
-                const confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, appVerifier);
-                verificationId = confirmationResult.verificationId;
-                
-                // Show OTP overlay
-                document.getElementById('otp-overlay').style.display = 'flex';
-                startResendTimer();
-                
-                // Clear any previous error
-                errorMessage.style.display = 'none';
+                try {
+                    const confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, appVerifier);
+                    console.log('Verification code sent successfully'); // Debug log
+                    verificationId = confirmationResult.verificationId;
+                    
+                    // Show OTP overlay
+                    document.getElementById('otp-overlay').style.display = 'flex';
+                    startResendTimer();
+                    
+                    // Clear any previous error
+                    errorMessage.style.display = 'none';
+                } catch (signInError) {
+                    console.error('Detailed sign-in error:', signInError); // Detailed error logging
+                    throw signInError;
+                }
                 
             } catch (error) {
                 console.error('Error sending OTP:', error);
-                errorMessage.textContent = 'Error sending verification code. Please try again.';
+                let errorMsg = 'Error sending verification code. ';
+                
+                // More specific error messages based on error code
+                if (error.code === 'auth/invalid-phone-number') {
+                    errorMsg += 'Invalid phone number format.';
+                } else if (error.code === 'auth/quota-exceeded') {
+                    errorMsg += 'SMS quota exceeded. Please try again later.';
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMsg += 'Too many attempts. Please try again later.';
+                } else {
+                    errorMsg += 'Please try again.';
+                }
+                
+                errorMessage.textContent = errorMsg;
                 errorMessage.style.display = 'block';
-                appVerifier.reset();
+                
+                // Reset reCAPTCHA
+                if (appVerifier) {
+                    appVerifier.reset();
+                }
                 initializeRecaptcha();
             } finally {
                 submitBtn.disabled = false;
