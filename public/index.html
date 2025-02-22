@@ -71,8 +71,8 @@
         <div id="map"></div>
         <div id="bottom-dock">
             <button id="pin-destination-btn" class="dock-btn"><img src="pin.svg"><span class="button-descriptions">Pin Destination</span></button>
-            <button id="route-btn" class="dock-btn"><img src="route.svg"><span class="button-descriptions">Find Safe Route</span></button>
-            <button id="simulate-flood" class="dock-btn warning"><img src="flood.svg"><span class="button-descriptions">Simulate Flood</span></button>
+            <button id="route-btn" class="dock-btn warning"><img src="route.svg"><span class="button-descriptions">Find Safe Route</span></button>
+            <button id="about-btn" class="dock-btn" onclick="location.href = './about.html'"><img src="about.svg"><span class="button-descriptions">About Alarma</span></button>
         </div>
     </div>
     <div id="loading-overlay">
@@ -404,25 +404,79 @@
             updateStationControls();
         }
 
-        // Modify the initialization to start polling for updates
+        // Get user location
+        function getUserLocation() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const { latitude, longitude } = position.coords;
+                    startMarker = L.marker([latitude, longitude], { 
+                        draggable: true,
+                        icon: startIcon
+                    })
+                        .addTo(map)
+                        .bindPopup("Current Location")
+                        .openPopup();
+                    map.setView([latitude, longitude], 13);
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }, 
+                error => {
+                    console.error("Geolocation failed:", error);
+                    let errorMessage = "Unable to access your location. ";
+                    
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage += "Please enable location services in your browser settings.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage += "Location information is unavailable.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage += "Location request timed out.";
+                            break;
+                        default:
+                            errorMessage += "Using default location.";
+                    }
+
+                    const fallbackCoords = [15.024505, 120.680464];
+                    startMarker = L.marker(fallbackCoords, { 
+                        draggable: true,
+                        icon: startIcon
+                    })
+                        .addTo(map)
+                        .bindPopup("Fallback Location")
+                        .openPopup();
+                    map.setView(fallbackCoords, 13);
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    alert(errorMessage);
+                },
+                options
+            );
+        }
+
+        // Call getUserLocation after Firebase authentication
         document.addEventListener('DOMContentLoaded', () => {
-            // Check authentication status
             firebase.auth().onAuthStateChanged((user) => {
                 if (!user) {
-                    // Redirect to signup if not authenticated
                     window.location.href = './signup.html';
                     return;
                 }
                 
-                // Update phone number display
                 const phoneSpan = document.getElementById('user-phone');
                 phoneSpan.textContent = user.phoneNumber || 'Not available';
                 
-                // User is authenticated, initialize app
                 user.getIdToken().then(token => {
                     window.authToken = token;
                     initializeStations();
                     updateStationControls();
+                    getUserLocation(); // Call after authentication
                     setInterval(fetchStationUpdates, 5000);
                 });
             });
@@ -629,79 +683,6 @@
                 updateStationControls();
             }
         });
-
-        // Get user location
-        navigator.geolocation.getCurrentPosition(position => {
-            const { latitude, longitude } = position.coords;
-            startMarker = L.marker([latitude, longitude], { 
-                draggable: true,
-                icon: startIcon
-            })
-                .addTo(map)
-                .bindPopup("Current Location")
-                .openPopup();
-            map.setView([latitude, longitude], 13);
-        }, error => {
-            console.error("Geolocation failed:", error);
-            const fallbackCoords = [15.024505, 120.680464];
-            startMarker = L.marker(fallbackCoords, { 
-                draggable: true,
-                icon: startIcon
-            })
-                .addTo(map)
-                .bindPopup("Fallback Location")
-                .openPopup();
-            map.setView(fallbackCoords, 13);
-            alert("Unable to access your location. Using default location.");
-        });
-
-        // Make routing container draggable
-        const dragBar = document.querySelector('.drag-bar');
-        const routeContainer = document.querySelector('.leaflet-routing-container');
-
-        let isDragging = false;
-        let startY;
-
-        dragBar.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startY = e.clientY;
-            document.body.style.cursor = 'grabbing';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const diffY = e.clientY - startY;
-            const newHeight = Math.max(routeContainer.offsetHeight - diffY, 30);
-            routeContainer.style.height = `${newHeight}px`;
-            startY = e.clientY;
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-            document.body.style.cursor = 'default';
-        });
-
-        // Update the formatPhoneNumber function
-        function formatPhoneNumber(phoneNumber) {
-            // Remove all non-digit characters
-            const cleaned = phoneNumber.replace(/\D/g, '');
-            
-            // Handle numbers starting with 09 or 9
-            if (cleaned.startsWith('09')) {
-                return '+63' + cleaned.substring(1);
-            } else if (cleaned.startsWith('9')) {
-                return '+63' + cleaned;
-            }
-            return null;
-        }
-        
-        // Update the validation function
-        function isValidPhoneNumber(phoneNumber) {
-            // Check if it's a valid Philippine mobile number (09XXXXXXXXX or 9XXXXXXXXX)
-            const localFormat = phoneNumber.replace(/\D/g, '');
-            const isValid = /^(09|\+639|9)\d{9}$/.test(localFormat);
-            return isValid;
-        }
     </script>
 </body>
 
