@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
-    <link rel="stylesheet" href="/css/styles.css">  
+    <link rel="stylesheet" href="./css/styles.css">  
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
@@ -33,6 +33,7 @@
     <!-- Add Firebase SDKs before your other scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     
     <!-- Initialize Firebase -->
     <script>
@@ -49,35 +50,35 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
     </script>
 </head>
 
 <body>
-    <button id="toggle-sidebar"><img id="menu" src="/menu.svg"></button>
+    <button id="toggle-sidebar"><img id="menu" src="./menu.svg"></button>
     <div id="sidebar">
         <div id="sidebar-header">
-            <img id="logo" src="/alarma-logo-text.svg" alt="ALARMA Logo">
+            <img id="logo" src="./alarma-logo-text.svg" alt="ALARMA Logo">
         </div>
         <div id="station-container">
             <!-- Station cards will be dynamically inserted here -->
         </div>
         <div id="user-info">
-            <p id="phone-display">An SMS alert will be sent to your registered phone number: <span
-                    id="user-phone">Loading...</span></p>
+            <p id="phone-display">An SMS alert will be sent to your registered phone number: <span id="user-phone">Loading...</span></p>
             <button id="logout-btn">Logout</button>
         </div>
     </div>
     <div id="map-container">
         <div id="map"></div>
         <div id="bottom-dock">
-            <button id="pin-destination-btn" class="dock-btn"><img src="/pin.svg"><span class="button-descriptions">Pin Destination</span></button>
-            <button id="route-btn" class="dock-btn warning"><img src="/route.svg"><span class="button-descriptions">Find Safe Route</span></button>
-            <button id="about-btn" class="dock-btn" onclick="location.href = '/about.html'"><img src="/about.svg"><span class="button-descriptions">About Alarma</span></button>
+            <button id="pin-destination-btn" class="dock-btn"><img src="./pin.svg"><span class="button-descriptions">Pin Destination</span></button>
+            <button id="route-btn" class="dock-btn warning"><img src="./route.svg"><span class="button-descriptions">Find Safe Route</span></button>
+            <button id="about-btn" class="dock-btn" onclick="window.open('./about.html', '_blank')"><img src="./about.svg"><span class="button-descriptions">About Alarma</span></button>
         </div>
     </div>
     <div id="loading-overlay">
         <div class="spinner">
-            <img src="/icons/alarma-logo.png" alt="Loading...">
+            <img src="./icons/alarma-logo.png" alt="Loading...">
         </div>
     </div>
     <div class="station-controls" id="station-controls">
@@ -135,14 +136,14 @@
 
         // Update icon configurations
         const startIcon = L.icon({
-            iconUrl: '/start.svg',
+            iconUrl: './start.svg',
             iconSize: [36, 36],
             iconAnchor: [18, 36],
             popupAnchor: [0, -36]
         });
 
         const endIcon = L.icon({
-            iconUrl: '/end.svg',
+            iconUrl: './end.svg',
             iconSize: [36, 36],
             iconAnchor: [18, 36],
             popupAnchor: [0, -36]
@@ -151,19 +152,19 @@
         // Update station icons as well for consistency
         const stationIcons = {
             normal: L.icon({
-                iconUrl: '/station3.svg',
+                iconUrl: './station3.svg',
                 iconSize: [48, 48],
                 iconAnchor: [24, 24],
                 popupAnchor: [0, -24]
             }),
             warning: L.icon({
-                iconUrl: '/warning.svg',
+                iconUrl: './warning.svg',
                 iconSize: [48, 48],
                 iconAnchor: [24, 24],
                 popupAnchor: [0, -24]
             }),
             emergency: L.icon({
-                iconUrl: '/flooded.svg',
+                iconUrl: './flooded.svg',
                 iconSize: [48, 48],
                 iconAnchor: [24, 24],
                 popupAnchor: [0, -24]
@@ -195,17 +196,34 @@
             updateStatusPanel();
         }
 
-        function updateStatusPanel() {
+        function updateStatusPanel(updatedStationId = null) {
             const stationContainer = document.getElementById('station-container');
-            stationContainer.innerHTML = stations.map(station => `
-                <div class="station-card" data-station-id="${station.id}">
-                    <h3>${station.name}</h3>
-                    <div class="station-status status-${station.status}">
-                        ${station.status.charAt(0).toUpperCase() + station.status.slice(1)}
+            stationContainer.innerHTML = stations.map(station => {
+                // Format the date properly, handling potential invalid dates
+                let formattedDate = 'Unknown';
+                try {
+                    // Check if lastUpdate is a Firebase Timestamp or a string
+                    if (station.lastUpdate && typeof station.lastUpdate.toDate === 'function') {
+                        // It's a Firebase Timestamp
+                        formattedDate = station.lastUpdate.toDate().toLocaleString();
+                    } else if (station.lastUpdate) {
+                        // It's a string or another format
+                        formattedDate = new Date(station.lastUpdate).toLocaleString();
+                    }
+                } catch (e) {
+                    console.error('Error formatting date:', e);
+                }
+                
+                return `
+                    <div class="station-card ${updatedStationId === station.id ? 'station-update-animation' : ''}" data-station-id="${station.id}">
+                        <h3>${station.name}</h3>
+                        <div class="station-status status-${station.status}">
+                            ${station.status.charAt(0).toUpperCase() + station.status.slice(1)}
+                        </div>
+                        <p class="station-timestamp">Last Update: ${formattedDate}</p>
                     </div>
-                    <p class="station-timestamp">Last Update: ${new Date(station.lastUpdate).toLocaleString()}</p>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             // Add click event listeners to station cards
             const stationCards = document.querySelectorAll('.station-card');
@@ -342,68 +360,193 @@
             alert('Unable to find a safe route. All possible routes cross flooded areas.');
         }
 
-        // Add this function to periodically fetch station updates
-        async function fetchStationUpdates() {
-            for (const station of stations) {
-                try {
-                    const stationNum = parseInt(station.id.split('-')[1]) - 1;
-                    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                        ? 'http://localhost:5501'
-                        : 'https://alarma.onrender.com';
-                    
-                    console.log('Fetching update for station:', stationNum); // Debug logging
-                    
-                    const response = await fetch(`${API_URL}/get-station-status?s=${stationNum}`, {
-                        headers: {
-                            'Accept': 'application/json',
-                            'Authorization': `Bearer ${window.authToken}`
-                        },
-                        credentials: 'include'
-                    });
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    console.log('Received station update:', data); // Debug logging
-                    
-                    if (data.success && data.data) {
-                        // Update local station data
-                        station.status = data.data.status;
-                        station.lastUpdate = data.data.lastUpdate;
-                        
-                        // Update marker and UI
-                        const marker = markers.get(station.id);
-                        if (marker) {
-                            marker.setIcon(stationIcons[station.status]);
-                            marker.getPopup().setContent(`<b>${station.name}</b><br>Status: ${station.status}`);
-                        }
-
-                        // Update flood circles
-                        map.eachLayer((layer) => {
-                            if (layer instanceof L.Circle && 
-                                layer.getLatLng().lat === station.coordinates[0] && 
-                                layer.getLatLng().lng === station.coordinates[1]) {
-                                map.removeLayer(layer);
-                            }
-                        });
-
-                        if (station.status !== 'normal') {
-                            L.circle(station.coordinates, {
-                                color: station.status === 'warning' ? 'orange' : 'red',
-                                fillColor: station.status === 'warning' ? '#ff9800' : '#f03',
-                                fillOpacity: 0.5,
-                                radius: 250
-                            }).addTo(map);
-                        }
-                    }
-                } catch (error) {
-                    console.error(`Failed to fetch updates for ${station.id}:`, error);
-                }
+        // Add this function to listen for station updates using Firebase
+        function setupStationListeners() {
+            console.log("Setting up station listeners");
+            
+            // Remove the polling interval if it exists
+            if (window.stationUpdateInterval) {
+                clearInterval(window.stationUpdateInterval);
+                console.log("Cleared existing polling interval");
             }
-            // Update the UI
-            updateStatusPanel();
-            updateStationControls();
+            
+            // Log the Firestore instance to verify it's initialized properly
+            console.log("Firestore instance:", db);
+            
+            // Log all stations we're trying to listen to
+            console.log("Stations to monitor:", stations);
+            
+            // Set up a real-time listener for each station
+            stations.forEach(station => {
+                // Use the station ID directly
+                const stationId = station.id; // This will be 'station-1', 'station-2', etc.
+                
+                console.log(`Setting up listener for ${stationId}`);
+                
+                // Create a reference to the station document using the exact ID
+                const stationRef = db.collection('stations').doc(stationId);
+                console.log(`Created reference to document: stations/${stationId}`);
+                
+                try {
+                    // Set up the real-time listener with detailed logging
+                    const unsubscribe = stationRef.onSnapshot((doc) => {
+                        console.log(`Snapshot received for ${stationId}:`, doc);
+                        
+                        if (doc.exists) {
+                            console.log(`Document exists for ${stationId}`);
+                            const stationData = doc.data();
+                            console.log(`Data for ${stationId}:`, stationData);
+                            
+                            // Check if the document has the expected fields
+                            if (stationData.status === undefined) {
+                                console.warn(`Document for ${stationId} is missing 'status' field`);
+                            }
+                            if (stationData.lastUpdate === undefined) {
+                                console.warn(`Document for ${stationId} is missing 'lastUpdate' field`);
+                            }
+                            
+                            // Check if status has changed
+                            const oldStatus = station.status;
+                            const newStatus = stationData.status || station.status;
+                            
+                            // Update local station data
+                            station.status = newStatus;
+                            station.lastUpdate = stationData.lastUpdate || station.lastUpdate;
+                            console.log(`Updated local station data for ${stationId}:`, station);
+                            
+                            // Show alert banner if status changed to warning or emergency
+                            if (oldStatus !== newStatus && newStatus !== 'normal') {
+                                const alert = document.createElement('div');
+                                alert.className = `alert-banner ${station.status}`;
+                                
+                                alert.innerHTML = `
+                                    <div class="alert-content">
+                                        <div class="alert-icon">${station.status === 'warning' ? '⚠️' : '🚨'}</div>
+                                        <div class="alert-message">
+                                            <strong>${station.name}</strong> reporting ${station.status} status!
+                                        </div>
+                                    </div>
+                                    <button class="alert-close">×</button>
+                                `;
+
+                                document.body.appendChild(alert);
+                                
+                                // Add click handler for close button
+                                const closeBtn = alert.querySelector('.alert-close');
+                                if (closeBtn) {
+                                    closeBtn.addEventListener('click', () => {
+                                        alert.classList.add('alert-closing');
+                                        setTimeout(() => {
+                                            if (alert && alert.parentNode) {
+                                                alert.remove();
+                                            }
+                                        }, 300);
+                                    });
+                                }
+                                
+                                // Remove the alert after 5 seconds
+                                setTimeout(() => {
+                                    if (alert && alert.parentNode) {
+                                        alert.classList.add('alert-closing');
+                                        setTimeout(() => alert.remove(), 300);
+                                    }
+                                }, 5000);
+                            }
+                            
+                            // Update marker with animation
+                            const marker = markers.get(station.id);
+                            if (marker) {
+                                console.log(`Updating marker for ${stationId}`);
+                                
+                                // Add pulse animation to marker
+                                const markerElement = marker.getElement();
+                                if (markerElement) {
+                                    // Remove any existing animation class first
+                                    markerElement.classList.remove('pulse-animation');
+                                    // Force reflow to restart animation
+                                    void markerElement.offsetWidth;
+                                    // Add animation class
+                                    markerElement.classList.add('pulse-animation');
+                                    setTimeout(() => markerElement.classList.remove('pulse-animation'), 1500);
+                                }
+                                
+                                marker.setIcon(stationIcons[station.status]);
+                                marker.getPopup().setContent(`<b>${station.name}</b><br>Status: ${station.status}`);
+                            } else {
+                                console.warn(`No marker found for ${stationId}`);
+                            }
+                            
+                            // Update flood circles with centered animation
+                            console.log(`Updating flood circles for ${stationId}`);
+                            
+                            // Remove existing flood circles for this station
+                            map.eachLayer((layer) => {
+                                if (layer instanceof L.Circle && 
+                                    layer.getLatLng().lat === station.coordinates[0] && 
+                                    layer.getLatLng().lng === station.coordinates[1]) {
+                                    map.removeLayer(layer);
+                                }
+                            });
+                            
+                            // Add new flood circle if status is not normal
+                            if (station.status !== 'normal') {
+                                // Create the circle with proper styling
+                                const circle = L.circle(station.coordinates, {
+                                    color: station.status === 'warning' ? 'orange' : 'red',
+                                    fillColor: station.status === 'warning' ? '#ff9800' : '#f03',
+                                    fillOpacity: 0.5,
+                                    radius: 250
+                                }).addTo(map);
+                                
+                                // Get the SVG element of the circle and add animation class
+                                setTimeout(() => {
+                                    const circleElement = circle.getElement();
+                                    if (circleElement) {
+                                        // Find the path element inside the SVG
+                                        const pathElement = circleElement.querySelector('path');
+                                        if (pathElement) {
+                                            pathElement.classList.add('pulse-animation');
+                                            setTimeout(() => pathElement.classList.remove('pulse-animation'), 1500);
+                                        }
+                                    }
+                                }, 10); // Small delay to ensure the element is in the DOM
+                            }
+                            
+                            // Update the UI with animation
+                            updateStatusPanel(stationId);
+                            updateStationControls();
+                        } else {
+                            console.warn(`No document exists for ${stationId}`);
+                        }
+                    }, (error) => {
+                        console.error(`Error listening to ${stationId}:`, error);
+                    });
+                    
+                    console.log(`Successfully set up listener for ${stationId}`);
+                    
+                    // Store the unsubscribe function to clean up later if needed
+                    if (!window.firestoreUnsubscribes) {
+                        window.firestoreUnsubscribes = {};
+                    }
+                    window.firestoreUnsubscribes[stationId] = unsubscribe;
+                    
+                } catch (error) {
+                    console.error(`Exception setting up listener for ${stationId}:`, error);
+                }
+            });
+            
+            // Test query to verify Firestore access
+            console.log("Testing Firestore access with a simple query...");
+            db.collection('stations').get()
+                .then(snapshot => {
+                    console.log("Firestore test query successful. Documents found:", snapshot.size);
+                    snapshot.forEach(doc => {
+                        console.log("Test query document:", doc.id, doc.data());
+                    });
+                })
+                .catch(error => {
+                    console.error("Firestore test query failed:", error);
+                });
         }
 
         // Get user location
@@ -471,15 +614,27 @@
                     return;
                 }
                 
-                const phoneSpan = document.getElementById('user-phone');
-                phoneSpan.textContent = user.phoneNumber || 'Not available';
-                
+                // Fetch user data from Firestore to get the phone number
+                db.collection('users').doc(user.uid).get()
+                    .then((doc) => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            const phoneSpan = document.getElementById('user-phone');
+                            phoneSpan.textContent = userData.phoneNumber || 'Not available';
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error fetching user data:', error);
+                        const phoneSpan = document.getElementById('user-phone');
+                        phoneSpan.textContent = 'Error loading phone number';
+                    });
+
                 user.getIdToken().then(token => {
                     window.authToken = token;
                     initializeStations();
                     updateStationControls();
                     getUserLocation(); // Call after authentication
-                    setInterval(fetchStationUpdates, 5000);
+                    setupStationListeners(); // Replace setInterval with real-time listeners
                 });
             });
 
@@ -542,41 +697,41 @@
             }
         }
 
-        // Modify the toggleStationStatus function
-        function toggleStationStatus(stationId) {
-            const station = stations.find(s => s.id === stationId);
-            if (!station) return;
+        // // Modify the toggleStationStatus function
+        // function toggleStationStatus(stationId) {
+        //     const station = stations.find(s => s.id === stationId);
+        //     if (!station) return;
 
-            // Update the status
-            switch (station.status) {
-                case 'normal':
-                    station.status = 'warning';
-                    break;
-                case 'warning':
-                    station.status = 'emergency';
-                    break;
-                case 'emergency':
-                    station.status = 'normal';
-                    break;
-            }
+        //     // Update the status
+        //     switch (station.status) {
+        //         case 'normal':
+        //             station.status = 'warning';
+        //             break;
+        //         case 'warning':
+        //             station.status = 'emergency';
+        //             break;
+        //         case 'emergency':
+        //             station.status = 'normal';
+        //             break;
+        //     }
 
-            station.lastUpdate = new Date().toISOString();
+        //     station.lastUpdate = new Date().toISOString();
             
-            // Update the server with the new status
-            updateStationStatus(stationId);
+        //     // Update the server with the new status
+        //     updateStationStatus(stationId);
 
-            // Show alert banner
-            if (station.status !== 'normal') {
-                const alert = document.createElement('div');
-                alert.className = 'alert-banner';
-                alert.textContent = `⚠️ Alert: ${station.name} reporting ${station.status} status!`;
-                document.body.appendChild(alert);
-                setTimeout(() => alert.remove(), 5000);
-            }
+        //     // Show alert banner
+        //     if (station.status !== 'normal') {
+        //         const alert = document.createElement('div');
+        //         alert.className = 'alert-banner';
+        //         alert.textContent = `⚠️ Alert: ${station.name} reporting ${station.status} status!`;
+        //         document.body.appendChild(alert);
+        //         setTimeout(() => alert.remove(), 5000);
+        //     }
 
-            // Update the controls
-            updateStationControls();
-        }
+        //     // Update the controls
+        //     updateStationControls();
+        // }
 
         function updateStationControls() {
             const controlsContainer = document.getElementById('station-controls');

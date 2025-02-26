@@ -1,9 +1,14 @@
 :root {
     --primary-blue: #1a73e8;
     --warning-color: #ff9800;
-    --emergency-color: #f44336;
+    --emergency-color: #d63b30;
     --sidebar-width: 330px;
     --header-height: 90px;
+    --background: #0f0f13;
+    --card-background: #ffffff;
+    --text-primary: #222222;
+    --text-secondary: #666666;
+    --accent-color: #e53935;
 }
 
 * {
@@ -97,26 +102,27 @@ body {
 }
 
 .station-card {
-    background: rgb(254, 254, 254);
+    background: var(--card-background);
     border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
-    padding: 1rem;
+    border-radius: 16px;
+    padding: 1.25rem;
     margin-bottom: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
 .station-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(229, 57, 53, 0.15);
+    border-color: rgba(229, 57, 53, 0.3);
 }
 
 .station-status {
     display: inline-flex;
     align-items: center;
-    padding: 6px 12px;
+    padding: 8px 16px;
     border-radius: 20px;
     font-size: 0.875rem;
     font-weight: 600;
@@ -159,17 +165,17 @@ body {
 .station-card h3 {
     font-size: 1.125rem;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
 }
 
 .leaflet-routing-container {
-    background: rgb(255, 255, 255);
-    color: rgb(22, 22, 22);
-    padding: 1.25rem;
+    background: var(--card-background);
+    color: var(--text-primary);
+    padding: 1.5rem;
     margin: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
     max-height: 70vh;
     overflow-y: hidden;
     position: fixed;
@@ -179,7 +185,8 @@ body {
     z-index: 1000;
     font-size: 1rem;
     transition: all 0.3s ease;
-    font-family: Outfit, sans-serif;
+    font-family: 'Outfit', sans-serif;
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* Style the route summary */
@@ -187,7 +194,7 @@ body {
     font-size: 1.25rem;
     font-weight: 600;
     margin-bottom: 1rem;
-    color: black;
+    color: var(--text-primary);
 }
 
 /* Style the instructions list */
@@ -199,7 +206,7 @@ body {
     background: transparent;
     padding: 0.5rem 0;
     margin-bottom: 1rem !important;
-    color: black;
+    color: var(--text-primary);
 }
 
 .leaflet-routing-alt:not(:last-child) {
@@ -208,7 +215,7 @@ body {
 
 .leaflet-routing-alt h2 {
     font-size: 1.5rem;
-    color: black !important;
+    color: var(--text-primary) !important;
     margin-bottom: 1rem;
     font-weight: 600;
 }
@@ -232,7 +239,7 @@ body {
 
 /* Style the distance/time indicators */
 .leaflet-routing-alt-minimized {
-    background: #f7f7f7;
+    background: rgba(0, 0, 0, 0.05);
     padding: 0.75rem;
     border-radius: 8px;
     margin-top: 1rem;
@@ -244,17 +251,17 @@ body {
 }
 
 .leaflet-routing-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 4px;
 }
 
 .leaflet-routing-container::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
 }
 
 .leaflet-routing-container::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: rgba(0, 0, 0, 0.3);
 }
 
 #map-container {
@@ -314,37 +321,147 @@ body {
 }
 
 .status-normal {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: rgba(46, 46, 46, 0.15);
+    color: #222222;
 }
 
 .status-warning {
-    background: #fff3e0;
-    color: #ef6c00;
+    background: rgba(239, 108, 0, 0.15);
+    color: #ff9800;
 }
 
 .status-emergency {
-    background: #ffebee;
-    color: #c62828;
+    background: rgba(198, 40, 40, 0.15);
+    color: #f44336;
 }
 
 .alert-banner {
     position: fixed;
-    top: -100px;
-    left: calc(50% + (var(--sidebar-width) / 2));
+    top: 20px;
+    left: 50%;
     transform: translateX(-50%);
-    border-radius: 20px;
-    background: var(--emergency-color);
-    color: white;
-    padding: 1rem;
-    text-align: center;
-    animation: slideDown 0.5s forwards;
-    z-index: 1000;
+    border-radius: 12px;
+    background: white;
+    color: var(--text-primary);
+    padding: 0;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    z-index: 1500;
+    width: 90%;
+    max-width: 450px;
+    overflow: hidden;
+    animation: slideInDown 0.5s forwards;
+    border-left: 6px solid var(--emergency-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-@keyframes slideDown {
+.alert-banner.warning {
+    border-left-color: var(--warning-color);
+}
+
+.alert-banner.emergency {
+    border-left-color: var(--emergency-color);
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    flex: 1;
+}
+
+.alert-icon {
+    font-size: 24px;
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alert-message {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.alert-message strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.alert-time {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0 16px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.alert-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translate(-50%, -100px);
+        opacity: 0;
+    }
     to {
-        top: 0;
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.alert-closing {
+    animation: slideOutUp 0.3s forwards;
+}
+
+@keyframes slideOutUp {
+    from {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+    to {
+        transform: translate(-50%, -100px);
+        opacity: 0;
+    }
+}
+
+/* Adjust position for desktop with sidebar */
+@media (min-width: 1025px) {
+    .alert-banner {
+        left: calc(50% + var(--sidebar-width)/2);
+    }
+}
+
+/* Mobile optimization */
+@media (max-width: 480px) {
+    .alert-banner {
+        width: calc(100% - 32px);
+        max-width: none;
+    }
+    
+    .alert-icon {
+        font-size: 20px;
+        margin-right: 12px;
+    }
+    
+    .alert-content {
+        padding: 12px;
     }
 }
 
@@ -353,18 +470,20 @@ body {
     bottom: 2rem;
     left: calc(50% + var(--sidebar-width)/2);
     transform: translateX(-50%);
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
     padding: 0.75rem;
     border-radius: 50px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: row;
     gap: 0.75rem;
     z-index: 1000;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .dock-btn {
-    background: black;
+    background: #222222;
     color: white;
     border: none;
     padding: 12px 24px;
@@ -372,24 +491,25 @@ body {
     cursor: pointer;
     font-size: 0.875rem;
     font-weight: 500;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .dock-btn:hover {
-    background: #454545;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: #333333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .dock-btn.warning {
-    background: rgb(201, 60, 60);
+    background: var(--emergency-color);
 }
 
 .dock-btn.warning:hover {
-    background: #f57c00;
+    background: #f55549;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 
 #loading-overlay {
@@ -399,42 +519,113 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
     justify-content: center;
     align-items: center;
     z-index: 2000;
+    transition: all 0.3s ease;
 }
 
 .spinner {
-    width: 100px;
-    height: 100px;
-    animation: 2s linear infinite, fade 1s ease-in-out infinite alternate;
+    width: 120px;
+    height: 120px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 4px solid transparent;
+    border-top-color: var(--accent-color);
+    animation: spin 1.2s linear infinite;
+}
+
+.spinner::after {
+    content: "";
+    position: absolute;
+    width: 90%;
+    height: 90%;
+    border-radius: 50%;
+    border: 4px solid transparent;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite reverse;
 }
 
 .spinner img {
-    width: 100%;
-    height: 100%;
+    width: 60%;
+    height: 60%;
     object-fit: contain;
+    animation: pulse 1.5s ease-in-out infinite alternate;
+    z-index: 1;
 }
 
 @keyframes spin {
     0% {
         transform: rotate(0deg);
     }
-
     100% {
         transform: rotate(360deg);
     }
 }
 
-@keyframes fade {
-    from {
-        opacity: 0.4;
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.7;
     }
+    50% {
+        transform: scale(1.3);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+}
 
-    to {
-        opacity: 1;
+/* This ensures the animation originates from the center */
+.leaflet-marker-icon.pulse-animation {
+    transform-origin: center center;
+    animation: pulse 1.5s ease-in-out;
+}
+
+/* For flood circles, we need to target the SVG element */
+.leaflet-circle-marker.pulse-animation {
+    transform-origin: center center;
+    animation: pulse 1.5s ease-in-out;
+}
+
+/* For SVG circles specifically */
+.leaflet-zoom-animated g path.pulse-animation {
+    transform-origin: center center;
+    animation: pulse 1.5s ease-in-out;
+}
+
+/* Station card animation */
+@keyframes stationCardUpdate {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 8px 30px rgba(229, 57, 53, 0.3);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.station-update-animation {
+    animation: stationCardUpdate 1s ease-in-out;
 }
 
 .station-controls {
@@ -443,14 +634,14 @@ body {
     bottom: 6rem;
     left: 50%;
     transform: translateX(-50%);
-    background: white;
-    padding: 1.25rem;
+    background: var(--card-background);
+    padding: 1.5rem;
     border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
     z-index: 999;
     min-width: 300px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 @media (min-width: 768px) {
@@ -470,7 +661,7 @@ body {
     display: block;
     font-weight: 600;
     font-size: 1rem;
-    color: #1a1a1a;
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -727,7 +918,7 @@ body {
 
 .leaflet-routing-alt h2 {
     font-size: 1rem;
-    color: black !important;
+    color: var(--text-primary) !important;
     margin-bottom: 0.5rem;
 }
 
@@ -795,5 +986,109 @@ body {
     
     #phone-display {
         font-size: 0.85rem;
+    }
+}
+
+/* Status change animation for station controls */
+@keyframes statusButtonUpdate {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.station-toggle-btn.status-updated {
+    animation: statusButtonUpdate 0.8s ease;
+}
+
+#transport-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 10px;
+}
+
+#car-icon, #motorcycle-icon {
+    width: 24px;
+    height: 24px;
+    margin: 0 5px;
+}
+
+/* The switch - the box around the slider */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--emergency-color);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--emergency-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Responsive adjustments for transport toggle */
+@media (max-width: 1024px) {
+    #transport-toggle {
+        position: absolute;
+        bottom: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.95);
+        padding: 5px 10px;
+        border-radius: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     }
 }

@@ -24,9 +24,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-blue: #1a73e8;
-            --warning-color: #ff9800;
             --emergency-color: #f44336;
+            --background: #0f0f13;
+            --card-background: #1a1a20;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
         }
 
         * {
@@ -41,79 +43,139 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: rgb(0, 0, 0);
+            background: var(--background);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(244, 67, 54, 0.08) 0%, transparent 60%);
+            z-index: 0;
+            animation: pulse 8s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1.02); }
         }
 
         .signup-container {
-            background: rgb(44, 44, 44);
-            padding: 2.5rem;
-            border-radius: 16px;
+            background: var(--card-background);
+            padding: 3rem;
+            border-radius: 24px;
             width: 90%;
-            max-width: 400px;
+            max-width: 420px;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .logo {
-            width: 200px;
-            margin-bottom: 2rem;
+            width: 120px;
+            filter: drop-shadow(0 0 15px rgba(244, 67, 54, 0.2));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
 
         h1 {
-            font-size: 1.5rem;
-            color: #ffffff;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
         p {
-            color: #bababa;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            font-size: 1rem;
+            line-height: 1.6;
         }
 
         .phone-input-container {
             position: relative;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .phone-input {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #ddd;
-            border-radius: 12px;
-            font-size: 1rem;
+            padding: 16px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            font-size: 1.1rem;
             outline: none;
             transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
         }
 
         .phone-input:focus {
-            border-color: var(--primary-blue);
+            border-color: var(--emergency-color);
+            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .phone-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .submit-btn {
-            background: black;
+            background: var(--emergency-color);
             color: white;
             border: none;
-            padding: 14px 24px;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 500;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
             width: 100%;
             transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(244, 67, 54, 0.3);
         }
 
         .submit-btn:hover {
-            background: #333;
-            transform: translateY(-1px);
+            background: #f55549;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(244, 67, 54, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
         }
 
         .error-message {
             color: var(--emergency-color);
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            margin-top: 0.75rem;
             display: none;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
         }
 
         #otp-overlay {
@@ -122,77 +184,126 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(15, 15, 19, 0.9);
+            backdrop-filter: blur(10px);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            animation: fadeIn 0.5s ease;
         }
 
         .otp-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 16px;
+            background: var(--card-background);
+            padding: 2.5rem;
+            border-radius: 24px;
             text-align: center;
-            max-width: 400px;
+            max-width: 420px;
             width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .otp-container h2 {
+            font-size: 1.6rem;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+        }
+
+        .otp-container p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
         }
 
         .otp-input-container {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             justify-content: center;
-            margin: 20px 0;
+            margin: 20px 0 30px;
         }
 
         .otp-input {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
+            width: 50px;
+            height: 60px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             text-align: center;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             font-weight: bold;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
         }
 
         .otp-input:focus {
-            border-color: var(--primary-blue);
+            border-color: var(--emergency-color);
+            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2);
             outline: none;
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .otp-actions {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
             align-items: center;
         }
 
         #verify-otp-btn {
-            background: black;
+            background: var(--emergency-color);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
+            padding: 16px 24px;
+            border-radius: 16px;
             cursor: pointer;
             width: 100%;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(244, 67, 54, 0.3);
+        }
+
+        #verify-otp-btn:hover {
+            background: #f55549;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(244, 67, 54, 0.4);
         }
 
         #resend-otp-btn {
             background: none;
             border: none;
-            color: var(--primary-blue);
+            color: var(--text-secondary);
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        #resend-otp-btn:hover:not(:disabled) {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         #resend-otp-btn:disabled {
-            color: #999;
+            color: rgba(255, 255, 255, 0.3);
             cursor: not-allowed;
         }
 
         #resend-timer {
-            color: #666;
+            color: var(--text-secondary);
             font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        #recaptcha-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            opacity: 0.01;
+            pointer-events: none;
         }
     </style>
     <!-- Add Firebase SDKs -->
@@ -223,7 +334,7 @@
 
 <body>
     <div class="signup-container">
-        <img src="alarma-logo-text.svg" alt="ALARMA Logo" class="logo">
+        <img src="icons/alarma-logo.png" alt="ALARMA Logo" class="logo">
         <h1>Sign up for ALARMA</h1>
         <p>Enter your phone number to receive updates and alerts</p>
         <form id="signup-form">
