@@ -75,6 +75,10 @@
             <button id="route-btn" class="dock-btn warning"><img src="./route.svg"><span class="button-descriptions">Find Safe Route</span></button>
             <button id="about-btn" class="dock-btn" onclick="window.open('./about.html', '_blank')"><img src="./about.svg"><span class="button-descriptions">About Alarma</span></button>
         </div>
+        <div id="transport-toggle">
+            <button id="car-mode" class="transport-btn active"><img src="./car.svg">Car</button>
+            <button id="bike-mode" class="transport-btn"><img src="./motorcycle.svg">Motorcycle</button>
+        </div>
     </div>
     <div id="loading-overlay">
         <div class="spinner">
@@ -116,22 +120,42 @@
                 name: 'Alarma Station 1',
                 coordinates: [15.024505, 120.680464],
                 status: 'normal',
-                lastUpdate: new Date().toISOString()
+                lastUpdate: new Date().toISOString(),
+                visible: true
             },
             {
                 id: 'station-2',
                 name: 'Alarma Station 2',
                 coordinates: [15.030505, 120.685464],
                 status: 'normal',
-                lastUpdate: new Date().toISOString()
+                lastUpdate: new Date().toISOString(),
+                visible: true
             },
             {
                 id: 'station-3',
                 name: 'Alarma Station 3',
                 coordinates: [15.028505, 120.682464],
                 status: 'normal',
-                lastUpdate: new Date().toISOString()
-            }
+                lastUpdate: new Date().toISOString(),
+                visible: true
+            },
+            // Add invisible expressway stations
+            {
+                id: 'nlex-1',
+                name: 'NLEX Del Carmen',
+                coordinates: [15.067154, 120.682260],
+                status: 'normal',
+                lastUpdate: new Date().toISOString(),
+                visible: false
+            },
+            {
+                id: 'nlex-2',
+                name: 'NLEX Jose Abad Santos',
+                coordinates: [15.049260, 120.694826],
+                status: 'normal',
+                lastUpdate: new Date().toISOString(),
+                visible: false
+            },
         ];
 
         // Update icon configurations
@@ -181,49 +205,54 @@
         const markers = new Map();
         let startMarker, endMarker;
         let routingControl = null;
+        let transportMode = 'driving'; // Default mode
 
         // Initialize stations on map
         function initializeStations() {
             stations.forEach(station => {
-                const marker = L.marker(station.coordinates, {
-                    icon: stationIcons[station.status],
-                    title: station.name
-                }).addTo(map);
+                if (station.visible) {
+                    const marker = L.marker(station.coordinates, {
+                        icon: stationIcons[station.status],
+                        title: station.name
+                    }).addTo(map);
 
-                marker.bindPopup(`<b>${station.name}</b><br>Status: ${station.status}`);
-                markers.set(station.id, marker);
+                    marker.bindPopup(`<b>${station.name}</b><br>Status: ${station.status}`);
+                    markers.set(station.id, marker);
+                }
             });
             updateStatusPanel();
         }
 
         function updateStatusPanel(updatedStationId = null) {
             const stationContainer = document.getElementById('station-container');
-            stationContainer.innerHTML = stations.map(station => {
-                // Format the date properly, handling potential invalid dates
-                let formattedDate = 'Unknown';
-                try {
-                    // Check if lastUpdate is a Firebase Timestamp or a string
-                    if (station.lastUpdate && typeof station.lastUpdate.toDate === 'function') {
-                        // It's a Firebase Timestamp
-                        formattedDate = station.lastUpdate.toDate().toLocaleString();
-                    } else if (station.lastUpdate) {
-                        // It's a string or another format
-                        formattedDate = new Date(station.lastUpdate).toLocaleString();
+            stationContainer.innerHTML = stations
+                .filter(station => station.visible) // Only include visible stations
+                .map(station => {
+                    // Format the date properly, handling potential invalid dates
+                    let formattedDate = 'Unknown';
+                    try {
+                        // Check if lastUpdate is a Firebase Timestamp or a string
+                        if (station.lastUpdate && typeof station.lastUpdate.toDate === 'function') {
+                            // It's a Firebase Timestamp
+                            formattedDate = station.lastUpdate.toDate().toLocaleString();
+                        } else if (station.lastUpdate) {
+                            // It's a string or another format
+                            formattedDate = new Date(station.lastUpdate).toLocaleString();
+                        }
+                    } catch (e) {
+                        console.error('Error formatting date:', e);
                     }
-                } catch (e) {
-                    console.error('Error formatting date:', e);
-                }
-                
-                return `
-                    <div class="station-card ${updatedStationId === station.id ? 'station-update-animation' : ''}" data-station-id="${station.id}">
-                        <h3>${station.name}</h3>
-                        <div class="station-status status-${station.status}">
-                            ${station.status.charAt(0).toUpperCase() + station.status.slice(1)}
+                    
+                    return `
+                        <div class="station-card ${updatedStationId === station.id ? 'station-update-animation' : ''}" data-station-id="${station.id}">
+                            <h3>${station.name}</h3>
+                            <div class="station-status status-${station.status}">
+                                ${station.status.charAt(0).toUpperCase() + station.status.slice(1)}
+                            </div>
+                            <p class="station-timestamp">Last Update: ${formattedDate}</p>
                         </div>
-                        <p class="station-timestamp">Last Update: ${formattedDate}</p>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
 
             // Add click event listeners to station cards
             const stationCards = document.querySelectorAll('.station-card');
@@ -246,7 +275,7 @@
         async function tryRoute(waypoints) {
             const waypointStr = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
             try {
-                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${waypointStr}?overview=full&geometries=geojson`);
+                const response = await fetch(`https://router.project-osrm.org/route/v1/${transportMode}/${waypointStr}?overview=full&geometries=geojson`);
                 if (!response.ok) throw new Error('Failed to fetch route');
 
                 const data = await response.json();
@@ -300,7 +329,8 @@
                         L.latLng(end.lat, end.lng)
                     ],
                     router: L.Routing.osrmv1({
-                        serviceUrl: 'https://router.project-osrm.org/route/v1'
+                        serviceUrl: 'https://router.project-osrm.org/route/v1',
+                        profile: transportMode
                     }),
                     lineOptions: {
                         styles: [{ color: '#000000', weight: 4 }]
@@ -338,7 +368,8 @@
                                     L.latLng(end.lat, end.lng)
                                 ],
                                 router: L.Routing.osrmv1({
-                                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                                    serviceUrl: 'https://router.project-osrm.org/route/v1',
+                                    profile: transportMode
                                 }),
                                 lineOptions: {
                                     styles: [{ color: '#000000', weight: 4 }]
@@ -833,13 +864,59 @@
             findSafeRoute(startMarker.getLatLng(), endMarker.getLatLng());
         });
 
-        document.getElementById('simulate-flood').addEventListener('click', () => {
-            const controlsElement = document.getElementById('station-controls');
-            controlsElement.classList.toggle('active');
-            if (controlsElement.classList.contains('active')) {
-                updateStationControls();
+        // document.getElementById('simulate-flood').addEventListener('click', () => {
+        //     const controlsElement = document.getElementById('station-controls');
+        //     controlsElement.classList.toggle('active');
+        //     if (controlsElement.classList.contains('active')) {
+        //         updateStationControls();
+        //     }
+        // });
+
+        // Update transport mode toggle event listeners
+        document.getElementById('car-mode').addEventListener('click', () => {
+            console.log('Switching to car mode');
+            document.getElementById('car-mode').classList.add('active');
+            document.getElementById('bike-mode').classList.remove('active');
+            transportMode = 'driving';
+            
+            // Update expressway stations
+            updateExpresswayStations('car');
+            
+            // Recalculate route if one exists
+            if (startMarker && endMarker && routingControl) {
+                console.log('Recalculating route with driving mode');
+                findSafeRoute(startMarker.getLatLng(), endMarker.getLatLng());
             }
         });
+
+        document.getElementById('bike-mode').addEventListener('click', () => {
+            console.log('Switching to motorcycle mode');
+            document.getElementById('bike-mode').classList.add('active');
+            document.getElementById('car-mode').classList.remove('active');
+            transportMode = 'bike';
+            
+            // Update expressway stations
+            updateExpresswayStations('bike');
+            
+            // Recalculate route if one exists
+            if (startMarker && endMarker && routingControl) {
+                console.log('Recalculating route with cycling mode');
+                findSafeRoute(startMarker.getLatLng(), endMarker.getLatLng());
+            }
+        });
+
+        // Add function to update expressway stations based on transport mode
+        function updateExpresswayStations(mode) {
+            stations.forEach(station => {
+                if (!station.visible) {
+                    if (mode === 'bike') {
+                        station.status = 'emergency';
+                    } else {
+                        station.status = 'normal';
+                    }
+                }
+            });
+        }
     </script>
 </body>
 

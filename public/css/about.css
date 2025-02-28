@@ -46,7 +46,7 @@ nav {
 
 .back-btn:hover {
     transform: translateX(-4px);
-    color: var(--accent-color);
+    color: var(--emergency-color);
 }
 
 .back-btn img {
@@ -100,14 +100,11 @@ main {
 }
 
 h1 {
-    font-size: 3.5rem;
+    font-size: 4rem;
     font-weight: 800;
     color: var(--text-primary);
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     letter-spacing: -0.5px;
-    background: linear-gradient(90deg, #ffffff, #fe3d3d);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
 }
 
 .tagline {
