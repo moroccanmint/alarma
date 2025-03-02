@@ -330,15 +330,26 @@
                     ],
                     router: L.Routing.osrmv1({
                         serviceUrl: 'https://router.project-osrm.org/route/v1',
-                        profile: transportMode
+                        profile: transportMode,
+                        numberOfAlternatives: 2 // Show up to 2 alternative routes
                     }),
                     lineOptions: {
-                        styles: [{ color: '#000000', weight: 4 }]
+                        styles: [{ color: '#000000', weight: 4 }],
+                        extendToWaypoints: true,
+                        missingRouteTolerance: 0
+                    },
+                    altLineOptions: {
+                        styles: [
+                            { color: '#777777', weight: 4, opacity: 0.6 },
+                            { color: '#999999', weight: 4, opacity: 0.4 }
+                        ]
                     },
                     addWaypoints: false,
                     draggableWaypoints: false,
                     fitSelectedRoutes: true,
-                    createMarker: function () { return null; }
+                    showAlternatives: true,
+                    createMarker: function () { return null; },
+                    containerClassName: 'routing-container'
                 }).addTo(map);
 
                 document.getElementById('loading-overlay').style.display = 'none';
@@ -728,41 +739,7 @@
             }
         }
 
-        // // Modify the toggleStationStatus function
-        // function toggleStationStatus(stationId) {
-        //     const station = stations.find(s => s.id === stationId);
-        //     if (!station) return;
-
-        //     // Update the status
-        //     switch (station.status) {
-        //         case 'normal':
-        //             station.status = 'warning';
-        //             break;
-        //         case 'warning':
-        //             station.status = 'emergency';
-        //             break;
-        //         case 'emergency':
-        //             station.status = 'normal';
-        //             break;
-        //     }
-
-        //     station.lastUpdate = new Date().toISOString();
-            
-        //     // Update the server with the new status
-        //     updateStationStatus(stationId);
-
-        //     // Show alert banner
-        //     if (station.status !== 'normal') {
-        //         const alert = document.createElement('div');
-        //         alert.className = 'alert-banner';
-        //         alert.textContent = `⚠️ Alert: ${station.name} reporting ${station.status} status!`;
-        //         document.body.appendChild(alert);
-        //         setTimeout(() => alert.remove(), 5000);
-        //     }
-
-        //     // Update the controls
-        //     updateStationControls();
-        // }
+        
 
         function updateStationControls() {
             const controlsContainer = document.getElementById('station-controls');
@@ -864,13 +841,7 @@
             findSafeRoute(startMarker.getLatLng(), endMarker.getLatLng());
         });
 
-        // document.getElementById('simulate-flood').addEventListener('click', () => {
-        //     const controlsElement = document.getElementById('station-controls');
-        //     controlsElement.classList.toggle('active');
-        //     if (controlsElement.classList.contains('active')) {
-        //         updateStationControls();
-        //     }
-        // });
+
 
         // Update transport mode toggle event listeners
         document.getElementById('car-mode').addEventListener('click', () => {

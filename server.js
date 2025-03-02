@@ -4,7 +4,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const admin = require('firebase-admin');
-// const twilio = require('twilio');
 
 // Initialize Firebase Admin
 admin.initializeApp({
@@ -52,42 +51,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Store station statuses in memory
 const stationStatuses = new Map();
 
-// Initialize Twilio client (add after other initializations)
-// const twilioClient = twilio(
-//     process.env.TWILIO_ACCOUNT_SID || 'your_account_sid',
-//     process.env.TWILIO_AUTH_TOKEN || 'your_auth_token'
-// );
-// const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER || 'your_twilio_number';
 
 // Function to send SMS alerts using Firebase Cloud Functions
 async function sendAlerts(stationId, newStatus) {
-    // try {
-    //     // Get all registered users
-    //     const usersSnapshot = await db.collection('users').get();
-        
-    //     const message = `ALARMA Alert: Station ${stationId} is now reporting ${newStatus} status.`;
-        
-    //     // Send message to each registered user
-    //     const promises = usersSnapshot.docs.map(async (doc) => {
-    //         const userData = doc.data();
-    //         const phoneNumber = userData.phoneNumber;
-            
-    //         try {
-    //             const result = await twilioClient.messages.create({
-    //                 body: message,
-    //                 to: phoneNumber,
-    //                 from: TWILIO_PHONE_NUMBER
-    //             });
-    //             console.log(`Message sent to ${phoneNumber}, SID: ${result.sid}`);
-    //         } catch (error) {
-    //             console.error(`Failed to send message to ${phoneNumber}:`, error);
-    //         }
-    //     });
-        
-    //     await Promise.all(promises);
-    // } catch (error) {
-    //     console.error('Error sending alerts:', error);
-    // }
     try {
         // Get all registered users
         const usersSnapshot = await db.collection('users').get();
@@ -188,6 +154,31 @@ app.get('/get-station-status', async (req, res) => {
     }
 });
 
+// Endpoint to get phone numbers from Firestore
+app.get('/get-phone-numbers', async (req, res) => {
+    try {
+        // Get all users from the users collection
+        const usersSnapshot = await db.collection('users').get();
+
+        const phoneNumbers = [];
+        usersSnapshot.forEach(doc => {
+            const userData = doc.data();
+            // Extract phone numbers from user data
+            if (userData.phoneNumber) {
+                phoneNumbers.push(userData.phoneNumber);
+            }
+        });
+
+        res.json(phoneNumbers);
+    } catch (error) {
+        console.error('Error fetching phone numbers:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch phone numbers'
+        });
+    }
+});
+
 // Add this to your server.js
 app.get('/test', (req, res) => {
     res.json({ status: 'Server is running' });
@@ -209,17 +200,6 @@ app.use((err, req, res, next) => {
 
 // Add a test endpoint
 app.get('/test-sms', async (req, res) => {
-    // try {
-    //     await twilioClient.messages.create({
-    //         body: 'This is a test message from ALARMA',
-    //         to: 'your_verified_phone_number',  // Use your verified number for testing
-    //         from: TWILIO_PHONE_NUMBER
-    //     });
-    //     res.json({ success: true, message: 'Test SMS sent successfully' });
-    // } catch (error) {
-    //     console.error('Error sending test SMS:', error);
-    //     res.status(500).json({ success: false, error: error.message });
-    // }
     res.json({
         success: true,
         message: 'SMS sending is currently disabled'

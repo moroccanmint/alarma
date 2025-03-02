@@ -806,7 +806,7 @@ body {
     .leaflet-routing-container {
         width: calc(100% - 2rem);
         max-width: 430px;
-        max-height: 30vh;
+        max-height: 50vh;
         position: fixed;
         left: 50%;
         transform: translateX(-50%);
@@ -817,64 +817,120 @@ body {
         backdrop-filter: blur(8px);
         border: 1px solid rgba(0, 0, 0, 0.1);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        overflow-y: hidden;
+        overflow-y: auto;
         padding: 1rem;
+        z-index: 1000;
+    }
+
+    .leaflet-routing-container.routing-container {
+        display: block !important;
+        height: auto !important;
+    }
+
+    /* Style for alternative routes */
+    .leaflet-routing-alternatives-container {
+        max-height: calc(50vh - 4rem);
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+
+    /* Improve scrolling experience */
+    .leaflet-routing-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .leaflet-routing-container::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 3px;
+    }
+
+    .leaflet-routing-container::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
     }
 
     /* Adjust table cell spacing */
+    .leaflet-routing-alt table {
+        width: 100%;
+        border-spacing: 0;
+        margin-bottom: 1rem;
+    }
+
     .leaflet-routing-alt table td {
-        /* border: 1px solid rgba(0, 0, 0, 0.36); */
-        padding: 0.5rem 0.2rem;
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        font-size: 0.9rem;
+        line-height: 1.4;
     }
 
     .leaflet-routing-alt table td:first-child {
-        padding-left: 0rem;
+        padding-left: 0;
+        width: 2rem;
     }
 
     .leaflet-routing-alt table td:last-child {
-        padding-right: 0rem;
+        padding-right: 0;
     }
 
-    .leaflet-routing-alt {
-        max-height: calc(30vh - 2rem);
-        overflow-y: auto;
-        padding: 0 0 1rem 0;
-        mask-image: linear-gradient(to bottom,
-                black calc(100% - 1.5rem),
-                transparent 100%);
-        -webkit-mask-image: linear-gradient(to bottom,
-                black calc(100% - 1.5rem),
-                transparent 100%);
+    /* Style alternative routes summary */
+    .leaflet-routing-alt h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0.5rem 0;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .leaflet-routing-alt h3 {
+        font-size: 0.9rem;
+        color: #666;
+        margin: 0.25rem 0;
+    }
+
+    /* Add visual separation between alternatives */
+    .leaflet-routing-alt:not(:last-child) {
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    /* Make the container draggable */
+    .leaflet-routing-container::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 2px;
+        margin: 0 auto 0.5rem;
+        cursor: grab;
     }
 }
 
 /* Additional mobile optimizations */
 @media (max-width: 480px) {
-    /* #bottom-dock {
-        width: calc(100% - 2rem);
-        justify-content: space-around;
-    } */
-
-    .dock-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 1.125rem;
-    }
-
-    /* .leaflet-routing-container {
-        bottom: calc(70px + 1rem);
+    .leaflet-routing-container {
+        width: calc(100% - 1rem);
+        max-width: none;
         left: 0.5rem;
         right: 0.5rem;
-        width: calc(100% - 1rem);
-        padding: 0.75rem;
-    } */
-
-    .station-controls {
-        width: calc(100% - 2rem);
-        left: 1rem;
-        right: 1rem;
+        top: 3.5rem;
         transform: none;
-        bottom: calc(70px + 2rem);
+        padding: 0.75rem;
+    }
+
+    .leaflet-routing-alt table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.85rem;
+    }
+
+    .leaflet-routing-alt h2 {
+        font-size: 0.95rem;
+    }
+
+    .leaflet-routing-alt h3 {
+        font-size: 0.85rem;
     }
 }
 
