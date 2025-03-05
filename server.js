@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const admin = require('firebase-admin');
+const axios = require('axios');
 
 // Initialize Firebase Admin
 admin.initializeApp({
@@ -51,31 +52,126 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Store station statuses in memory
 const stationStatuses = new Map();
 
-
-// Function to send SMS alerts using Firebase Cloud Functions
+// Add this before the API router definition
 async function sendAlerts(stationId, newStatus) {
+    console.log('Starting sendAlerts function for:', { stationId, newStatus });
+    
     try {
         // Get all registered users
         const usersSnapshot = await db.collection('users').get();
+        console.log(`Found ${usersSnapshot.size} users in database`);
 
-        const message = `ALARMA Alert: Station ${stationId} is now reporting ${newStatus} status.`;
+        if (usersSnapshot.empty) {
+            console.log('No registered users found');
+            return;
+        }
 
-        // Log messages instead of sending
-        usersSnapshot.docs.forEach(doc => {
-            const userData = doc.data();
-            console.log(`Would send "${message}" to ${userData.phoneNumber}`);
+        // First, get all devices
+        const devicesResponse = await axios({
+            method: 'GET',
+            url: 'https://api.pushbullet.com/v2/devices',
+            headers: {
+                'Access-Token': process.env.PUSHBULLET_API_KEY,
+                'Content-Type': 'application/json'
+            }
         });
 
+        const devices = devicesResponse.data.devices;
+        console.log('Available devices:', devices.map(d => ({
+            iden: d.iden,
+            nickname: d.nickname,
+            has_sms: d.has_sms
+        })));
+
+        // Find SMS-capable device
+        const smsDevice = devices.find(device => device.has_sms);
+        if (!smsDevice) {
+            throw new Error('No SMS-capable device found');
+        }
+        console.log('Found SMS-capable device:', {
+            iden: smsDevice.iden,
+            nickname: smsDevice.nickname,
+            model: smsDevice.model
+        });
+
+        // Prepare message
+        const message = `ALARMA Alert: Station ${stationId} is now reporting ${newStatus} status.`;
+
+        // Filter users with phone numbers
+        const usersWithPhones = usersSnapshot.docs.filter(doc => doc.data().phoneNumber);
+        console.log(`Found ${usersWithPhones.length} users with phone numbers`);
+
+        // Send SMS to each user
+        for (const doc of usersWithPhones) {
+            const userData = doc.data();
+            try {
+                console.log(`Attempting to send SMS to ${userData.phoneNumber}`);
+                
+                // Try using the SMS endpoint
+                await axios({
+                    method: 'POST',
+                    url: 'https://api.pushbullet.com/v2/texts',
+                    headers: {
+                        'Access-Token': process.env.PUSHBULLET_API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    data: {
+                        data: {
+                            target_device_iden: smsDevice.iden,
+                            addresses: [userData.phoneNumber],
+                            message: message
+                        }
+                    }
+                });
+
+                // Also send as a push notification as backup
+                await axios({
+                    method: 'POST',
+                    url: 'https://api.pushbullet.com/v2/pushes',
+                    headers: {
+                        'Access-Token': process.env.PUSHBULLET_API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    data: {
+                        type: 'note',
+                        title: `SMS to ${userData.phoneNumber}`,
+                        body: message,
+                        device_iden: smsDevice.iden,
+                        source_device_iden: smsDevice.iden
+                    }
+                });
+
+                console.log(`Successfully sent alert for ${userData.phoneNumber}`);
+            } catch (smsError) {
+                console.error(`Failed to send alert for ${userData.phoneNumber}:`, {
+                    error: smsError.response?.data || smsError.message,
+                    status: smsError.response?.status,
+                    headers: smsError.response?.headers
+                });
+            }
+        }
+
     } catch (error) {
-        console.error('Error in sendAlerts:', error);
+        console.error('Error in sendAlerts:', {
+            error: error.response?.data || error.message,
+            stack: error.stack
+        });
+        throw error;
     }
 }
 
-// Modified station update endpoint
-app.get('/update-station', async (req, res) => {
+// Create an API router
+const apiRouter = express.Router();
+
+// Move all API endpoints to the router
+apiRouter.get('/update-station', async (req, res) => {
     const { s, st } = req.query;
     
+    console.log('==== UPDATE STATION REQUEST STARTED ====');
+    console.log('Raw parameters:', { s, st });
+    
     if (s === undefined || st === undefined) {
+        console.log('ERROR: Missing parameters');
         return res.status(400).json({ 
             success: false, 
             message: 'Missing required parameters' 
@@ -86,16 +182,42 @@ app.get('/update-station', async (req, res) => {
     const statusMap = ['normal', 'warning', 'emergency'];
     const status = statusMap[parseInt(st)];
     
+    console.log('Parsed parameters:', { 
+        stationId, 
+        status, 
+        originalStatus: st,
+        statusIndex: parseInt(st)
+    });
+    
     try {
         // Update Firestore
+        console.log('Attempting to update Firestore...');
         await db.collection('stations').doc(stationId).set({
             status: status,
             lastUpdate: admin.firestore.FieldValue.serverTimestamp()
         });
+        console.log('Firestore update successful');
         
-        // If status is warning or emergency, send alerts
-        if (status !== 'normal') {
-            await sendAlerts(stationId, status);
+        // Check status and send alerts
+        console.log('Current status:', status);
+        console.log('Should send alert:', status === 'warning' || status === 'emergency');
+        
+        if (status === 'warning' || status === 'emergency') {
+            console.log(`ALERT CONDITION MET: Status is ${status}`);
+            try {
+                console.log('Calling sendAlerts function...');
+                await sendAlerts(stationId, status);
+                console.log('sendAlerts function completed successfully');
+            } catch (alertError) {
+                console.error('Alert sending failed:', alertError);
+                console.error('Full error details:', {
+                    message: alertError.message,
+                    response: alertError.response?.data,
+                    stack: alertError.stack
+                });
+            }
+        } else {
+            console.log('No alert needed - status is normal');
         }
         
         // Update local cache
@@ -104,21 +226,33 @@ app.get('/update-station', async (req, res) => {
             lastUpdate: new Date().toISOString()
         });
         
+        console.log('==== UPDATE STATION REQUEST COMPLETED ====');
+        
         res.json({ 
             success: true,
-            data: stationStatuses.get(stationId)
+            data: {
+                stationId,
+                status,
+                lastUpdate: new Date().toISOString(),
+                alertSent: status === 'warning' || status === 'emergency'
+            }
         });
     } catch (error) {
-        console.error('Error updating station:', error);
+        console.error('==== UPDATE STATION REQUEST FAILED ====');
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            response: error.response?.data
+        });
         res.status(500).json({
             success: false,
-            message: 'Error updating station status'
+            message: 'Error updating station status',
+            error: error.message
         });
     }
 });
 
-// Get station status endpoint
-app.get('/get-station-status', async (req, res) => {
+apiRouter.get('/get-station-status', async (req, res) => {
     const { s } = req.query;
     const stationId = `station-${parseInt(s) + 1}`;
     
@@ -154,8 +288,7 @@ app.get('/get-station-status', async (req, res) => {
     }
 });
 
-// Endpoint to get phone numbers from Firestore
-app.get('/get-phone-numbers', async (req, res) => {
+apiRouter.get('/get-phone-numbers', async (req, res) => {
     try {
         // Get all users from the users collection
         const usersSnapshot = await db.collection('users').get();
@@ -179,13 +312,124 @@ app.get('/get-phone-numbers', async (req, res) => {
     }
 });
 
-// Add this to your server.js
-app.get('/test', (req, res) => {
+apiRouter.get('/test', (req, res) => {
     res.json({ status: 'Server is running' });
 });
 
-// Catch-all route to serve index.html
+apiRouter.get('/test-sms', async (req, res) => {
+    try {
+        console.log('Testing SMS functionality');
+        
+        // Test the Pushbullet connection first
+        const testResponse = await axios({
+            method: 'GET',
+            url: 'https://api.pushbullet.com/v2/users/me',
+            headers: {
+                'Access-Token': process.env.PUSHBULLET_API_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('Pushbullet connection successful:', testResponse.data.email);
+        
+        // Now test sending an alert
+        await sendAlerts('test-station', 'test-alert');
+        
+        res.json({
+            success: true,
+            message: 'SMS test completed, check server logs for details'
+        });
+    } catch (error) {
+        console.error('SMS test failed:', error.response?.data || error.message);
+        res.status(500).json({
+            success: false,
+            message: 'SMS test failed',
+            error: error.response?.data || error.message
+        });
+    }
+});
+
+// Add this new debug endpoint
+apiRouter.get('/debug-status', (req, res) => {
+    const { s, st } = req.query;
+    const stationId = `station-${parseInt(s) + 1}`;
+    const statusMap = ['normal', 'warning', 'emergency'];
+    const status = statusMap[parseInt(st)];
+    
+    res.json({
+        input: {
+            s,
+            st
+        },
+        parsed: {
+            stationId,
+            statusIndex: parseInt(st),
+            status,
+            wouldTriggerAlert: status === 'warning' || status === 'emergency'
+        }
+    });
+});
+
+// Add a debug endpoint to check Pushbullet setup
+apiRouter.get('/debug-pushbullet', async (req, res) => {
+    try {
+        // Check Pushbullet API key
+        console.log('Checking Pushbullet API key...');
+        const userResponse = await axios({
+            method: 'GET',
+            url: 'https://api.pushbullet.com/v2/users/me',
+            headers: {
+                'Access-Token': process.env.PUSHBULLET_API_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Get devices
+        const devicesResponse = await axios({
+            method: 'GET',
+            url: 'https://api.pushbullet.com/v2/devices',
+            headers: {
+                'Access-Token': process.env.PUSHBULLET_API_KEY,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        res.json({
+            user: userResponse.data,
+            devices: devicesResponse.data.devices.map(d => ({
+                iden: d.iden,
+                nickname: d.nickname,
+                model: d.model,
+                has_sms: d.has_sms
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: error.response?.data || error.message
+        });
+    }
+});
+
+// Use the API router with a prefix
+app.use('/api', apiRouter);
+
+// Catch-all route for frontend
 app.get('*', (req, res) => {
+    // List of API endpoints that should not serve index.html
+    const apiEndpoints = [
+        '/update-station',
+        '/get-station-status',
+        '/get-phone-numbers',
+        '/test',
+        '/test-sms'
+    ];
+    
+    // If the request is for an API endpoint, return 404
+    if (apiEndpoints.includes(req.path)) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    // Otherwise serve index.html
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -195,14 +439,6 @@ app.use((err, req, res, next) => {
     res.status(500).json({
         success: false,
         message: 'Internal server error'
-    });
-});
-
-// Add a test endpoint
-app.get('/test-sms', async (req, res) => {
-    res.json({
-        success: true,
-        message: 'SMS sending is currently disabled'
     });
 });
 
