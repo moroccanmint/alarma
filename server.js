@@ -52,7 +52,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Store station statuses in memory
 const stationStatuses = new Map();
 
-// Add this before the API router definition
+// Send Alerts to users
 async function sendAlerts(stationId, newStatus) {
     console.log('Starting sendAlerts function for:', { stationId, newStatus });
     
@@ -190,6 +190,10 @@ apiRouter.get('/update-station', async (req, res) => {
     });
     
     try {
+        // Get current status from Firestore before updating
+        const stationDoc = await db.collection('stations').doc(stationId).get();
+        const currentStatus = stationDoc.exists ? stationDoc.data().status : 'normal';
+        
         // Update Firestore
         console.log('Attempting to update Firestore...');
         await db.collection('stations').doc(stationId).set({
@@ -198,12 +202,25 @@ apiRouter.get('/update-station', async (req, res) => {
         });
         console.log('Firestore update successful');
         
-        // Check status and send alerts
+        // Check if we should send alerts based on status change
         console.log('Current status:', status);
-        console.log('Should send alert:', status === 'warning' || status === 'emergency');
+        console.log('Previous status:', currentStatus);
         
-        if (status === 'warning' || status === 'emergency') {
-            console.log(`ALERT CONDITION MET: Status is ${status}`);
+        const shouldSendAlert = (
+            // Send alert when changing from normal to warning/emergency
+            (currentStatus === 'normal' && (status === 'warning' || status === 'emergency')) ||
+            // Send alert when changing from warning to emergency
+            (currentStatus === 'warning' && status === 'emergency') ||
+            // Send alert when changing from emergency to warning
+            (currentStatus === 'emergency' && status === 'warning') ||
+            // Always send alert when changing to normal (all-clear)
+            (currentStatus !== 'normal' && status === 'normal')
+        );
+        
+        console.log('Should send alert:', shouldSendAlert);
+        
+        if (shouldSendAlert) {
+            console.log(`ALERT CONDITION MET: Status changed from ${currentStatus} to ${status}`);
             try {
                 console.log('Calling sendAlerts function...');
                 await sendAlerts(stationId, status);
@@ -217,7 +234,7 @@ apiRouter.get('/update-station', async (req, res) => {
                 });
             }
         } else {
-            console.log('No alert needed - status is normal');
+            console.log(`No alert needed - Status update from ${currentStatus} to ${status}`);
         }
         
         // Update local cache
@@ -234,7 +251,7 @@ apiRouter.get('/update-station', async (req, res) => {
                 stationId,
                 status,
                 lastUpdate: new Date().toISOString(),
-                alertSent: status === 'warning' || status === 'emergency'
+                alertSent: shouldSendAlert
             }
         });
     } catch (error) {
