@@ -305,6 +305,28 @@
             opacity: 0.01;
             pointer-events: none;
         }
+
+        .phone-highlight {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
     </style>
     <!-- Add Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -334,7 +356,7 @@
 
 <body>
     <div class="signup-container">
-        <img src="icons/alarma-logo.png" alt="ALARMA Logo" class="logo">
+        <!-- <img src="icons/alarma-logo.png" alt="ALARMA Logo" class="logo"> -->
         <h1>Sign up for ALARMA</h1>
         <p>Enter your phone number to receive updates and alerts</p>
         <form id="signup-form">
@@ -349,7 +371,7 @@
     <div id="otp-overlay">
         <div class="otp-container">
             <h2>Verify Your Phone</h2>
-            <p>Enter the 6-digit code sent to your phone</p>
+            <p>Enter the 6-digit code sent to <span id="display-phone" class="phone-highlight"></span></p>
             <div class="otp-input-container">
                 <input type="text" maxlength="1" class="otp-input">
                 <input type="text" maxlength="1" class="otp-input">
@@ -362,6 +384,7 @@
                 <button id="verify-otp-btn">Verify</button>
                 <button id="resend-otp-btn">Resend Code</button>
                 <span id="resend-timer"></span>
+                <button id="back-to-phone-btn" class="back-btn">Change Phone Number</button>
             </div>
         </div>
     </div>
@@ -380,30 +403,37 @@
         };
         
         function initializeRecaptcha() {
-            try {
-                if (appVerifier) {
-                    appVerifier.clear();
-                }
-                
-                appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                    'size': 'invisible',
-                    'callback': (response) => {
-                        console.log('reCAPTCHA verified');
-                    },
-                    'expired-callback': () => {
-                        console.log('reCAPTCHA expired');
-                        appVerifier.reset();
-                        initializeRecaptcha();
+            return new Promise((resolve, reject) => {
+                try {
+                    // Clean up existing reCAPTCHA if it exists
+                    if (window.recaptchaWidgetId !== undefined) {
+                        grecaptcha.reset(window.recaptchaWidgetId);
+                        resolve(appVerifier);
+                        return;
                     }
-                });
-                
-                appVerifier.render().then(function(widgetId) {
-                    window.recaptchaWidgetId = widgetId;
-                    console.log('reCAPTCHA rendered successfully');
-                });
-            } catch (error) {
-                console.error('Error initializing reCAPTCHA:', error);
-            }
+                    
+                    // Create new reCAPTCHA instance
+                    appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                        'size': 'invisible',
+                        'callback': (response) => {
+                            console.log('reCAPTCHA verified');
+                        },
+                        'expired-callback': () => {
+                            console.log('reCAPTCHA expired');
+                            initializeRecaptcha();
+                        }
+                    });
+                    
+                    appVerifier.render().then(function(widgetId) {
+                        window.recaptchaWidgetId = widgetId;
+                        console.log('reCAPTCHA rendered successfully');
+                        resolve(appVerifier);
+                    });
+                } catch (error) {
+                    console.error('Error initializing reCAPTCHA:', error);
+                    reject(error);
+                }
+            });
         }
         
         // Format phone number to E.164 format
@@ -425,6 +455,26 @@
             // Basic validation for Philippine numbers
             const phoneRegex = /^\+?63[0-9]{10}$/;
             return phoneRegex.test(phoneNumber);
+        }
+        
+        // Add this function before the form submission handler
+        function startResendTimer() {
+            const resendButton = document.getElementById('resend-otp-btn');
+            const timerSpan = document.getElementById('resend-timer');
+            let timeLeft = 60; // 60 seconds cooldown
+            
+            resendButton.disabled = true;
+            
+            const timer = setInterval(() => {
+                timeLeft--;
+                timerSpan.textContent = `Resend available in ${timeLeft}s`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    resendButton.disabled = false;
+                    timerSpan.textContent = '';
+                }
+            }, 1000);
         }
         
         // Handle phone number submission
@@ -463,8 +513,9 @@
                     console.log('Verification code sent successfully'); // Debug log
                     verificationId = confirmationResult.verificationId;
                     
-                    // Show OTP overlay
+                    // Show OTP overlay and update phone display
                     document.getElementById('otp-overlay').style.display = 'flex';
+                    document.getElementById('display-phone').textContent = phoneNumber;
                     startResendTimer();
                     
                     // Clear any previous error
@@ -560,12 +611,11 @@
             try {
                 resendBtn.disabled = true;
                 
-                // Reset reCAPTCHA and create new instance
-                appVerifier.reset();
-                initializeRecaptcha();
+                // Reset and get reCAPTCHA verifier
+                const verifier = await initializeRecaptcha();
                 
                 // Resend verification code
-                const confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, appVerifier);
+                const confirmationResult = await auth.signInWithPhoneNumber(phoneNumber, verifier);
                 verificationId = confirmationResult.verificationId;
                 
                 // Reset timer
@@ -578,6 +628,7 @@
             } catch (error) {
                 console.error('Error resending OTP:', error);
                 alert('Error resending verification code. Please try again.');
+                resendBtn.disabled = false;
             }
         });
         
@@ -633,6 +684,25 @@
                     }
                 });
             });
+        });
+
+        // Add this event listener for the back button
+        document.getElementById('back-to-phone-btn').addEventListener('click', () => {
+            // Hide OTP overlay
+            document.getElementById('otp-overlay').style.display = 'none';
+            
+            // Reset OTP inputs
+            document.querySelectorAll('.otp-input').forEach(input => input.value = '');
+            
+            // Reset verification state
+            verificationId = null;
+            
+            // Re-enable the submit button if it was disabled
+            document.querySelector('.submit-btn').disabled = false;
+            document.querySelector('.submit-btn').textContent = 'Continue';
+            
+            // Reset reCAPTCHA
+            initializeRecaptcha();
         });
     </script>
 </body>

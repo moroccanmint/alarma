@@ -29,12 +29,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
-    
+
     <!-- Add Firebase SDKs before your other scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    
+
     <!-- Initialize Firebase -->
     <script>
         // Firebase configuration
@@ -64,16 +64,20 @@
             <!-- Station cards will be dynamically inserted here -->
         </div>
         <div id="user-info">
-            <p id="phone-display">An SMS alert will be sent to your registered phone number: <span id="user-phone">Loading...</span></p>
+            <p id="phone-display">An SMS alert will be sent to your registered phone number: <span
+                    id="user-phone">Loading...</span></p>
             <button id="logout-btn">Logout</button>
         </div>
     </div>
     <div id="map-container">
         <div id="map"></div>
         <div id="bottom-dock">
-            <button id="pin-destination-btn" class="dock-btn"><img src="/pin.svg"><span class="button-descriptions">Pin Destination</span></button>
-            <button id="route-btn" class="dock-btn warning"><img src="/route.svg"><span class="button-descriptions">Find Safe Route</span></button>
-            <button id="about-btn" class="dock-btn" onclick="window.open('/about.html', '_blank')"><img src="/about.svg"><span class="button-descriptions">About Alarma</span></button>
+            <button id="pin-destination-btn" class="dock-btn"><img src="/pin.svg"><span class="button-descriptions">Pin
+                    Destination</span></button>
+            <button id="route-btn" class="dock-btn warning"><img src="/route.svg"><span class="button-descriptions">Find
+                    Safe Route</span></button>
+            <button id="about-btn" class="dock-btn" onclick="window.open('/about.html', '_blank')"><img
+                    src="/about.svg"><span class="button-descriptions">About Alarma</span></button>
         </div>
         <div id="transport-toggle">
             <button id="car-mode" class="transport-btn active"><img src="/car.svg">Car</button>
@@ -106,7 +110,7 @@
             if (window.innerWidth <= 1100) {  // Only on mobile view
                 const isClickInsideSidebar = sidebar.contains(e.target);
                 const isClickOnToggleBtn = toggleBtn.contains(e.target);
-                
+
                 if (!isClickInsideSidebar && !isClickOnToggleBtn && sidebar.classList.contains('active')) {
                     sidebar.classList.remove('active');
                 }
@@ -242,7 +246,7 @@
                     } catch (e) {
                         console.error('Error formatting date:', e);
                     }
-                    
+
                     return `
                         <div class="station-card ${updatedStationId === station.id ? 'station-update-animation' : ''}" data-station-id="${station.id}">
                             <h3>${station.name}</h3>
@@ -265,7 +269,7 @@
                         markers.get(stationId).openPopup();
                     }
                 });
-                
+
                 // Add hover style to indicate clickability
                 card.style.cursor = 'pointer';
             });
@@ -405,40 +409,40 @@
         // Add this function to listen for station updates using Firebase
         function setupStationListeners() {
             console.log("Setting up station listeners");
-            
+
             // Remove the polling interval if it exists
             if (window.stationUpdateInterval) {
                 clearInterval(window.stationUpdateInterval);
                 console.log("Cleared existing polling interval");
             }
-            
+
             // Log the Firestore instance to verify it's initialized properly
             console.log("Firestore instance:", db);
-            
+
             // Log all stations we're trying to listen to
             console.log("Stations to monitor:", stations);
-            
+
             // Set up a real-time listener for each station
             stations.forEach(station => {
                 // Use the station ID directly
                 const stationId = station.id; // This will be 'station-1', 'station-2', etc.
-                
+
                 console.log(`Setting up listener for ${stationId}`);
-                
+
                 // Create a reference to the station document using the exact ID
                 const stationRef = db.collection('stations').doc(stationId);
                 console.log(`Created reference to document: stations/${stationId}`);
-                
+
                 try {
                     // Set up the real-time listener with detailed logging
                     const unsubscribe = stationRef.onSnapshot((doc) => {
                         console.log(`Snapshot received for ${stationId}:`, doc);
-                        
+
                         if (doc.exists) {
                             console.log(`Document exists for ${stationId}`);
                             const stationData = doc.data();
                             console.log(`Data for ${stationId}:`, stationData);
-                            
+
                             // Check if the document has the expected fields
                             if (stationData.status === undefined) {
                                 console.warn(`Document for ${stationId} is missing 'status' field`);
@@ -446,21 +450,21 @@
                             if (stationData.lastUpdate === undefined) {
                                 console.warn(`Document for ${stationId} is missing 'lastUpdate' field`);
                             }
-                            
+
                             // Check if status has changed
                             const oldStatus = station.status;
                             const newStatus = stationData.status || station.status;
-                            
+
                             // Update local station data
                             station.status = newStatus;
                             station.lastUpdate = stationData.lastUpdate || station.lastUpdate;
                             console.log(`Updated local station data for ${stationId}:`, station);
-                            
+
                             // Show alert banner if status changed to warning or emergency
                             if (oldStatus !== newStatus && newStatus !== 'normal') {
                                 const alert = document.createElement('div');
                                 alert.className = `alert-banner ${station.status}`;
-                                
+
                                 alert.innerHTML = `
                                     <div class="alert-content">
                                         <div class="alert-icon">${station.status === 'warning' ? '⚠️' : '🚨'}</div>
@@ -472,7 +476,7 @@
                                 `;
 
                                 document.body.appendChild(alert);
-                                
+
                                 // Add click handler for close button
                                 const closeBtn = alert.querySelector('.alert-close');
                                 if (closeBtn) {
@@ -485,7 +489,7 @@
                                         }, 300);
                                     });
                                 }
-                                
+
                                 // Remove the alert after 5 seconds
                                 setTimeout(() => {
                                     if (alert && alert.parentNode) {
@@ -494,12 +498,12 @@
                                     }
                                 }, 5000);
                             }
-                            
+
                             // Update marker with animation
                             const marker = markers.get(station.id);
                             if (marker) {
                                 console.log(`Updating marker for ${stationId}`);
-                                
+
                                 // Add pulse animation to marker
                                 const markerElement = marker.getElement();
                                 if (markerElement) {
@@ -511,25 +515,25 @@
                                     markerElement.classList.add('pulse-animation');
                                     setTimeout(() => markerElement.classList.remove('pulse-animation'), 1500);
                                 }
-                                
+
                                 marker.setIcon(stationIcons[station.status]);
                                 marker.getPopup().setContent(`<b>${station.name}</b><br>Status: ${station.status}`);
                             } else {
                                 console.warn(`No marker found for ${stationId}`);
                             }
-                            
+
                             // Update flood circles with centered animation
                             console.log(`Updating flood circles for ${stationId}`);
-                            
+
                             // Remove existing flood circles for this station
                             map.eachLayer((layer) => {
-                                if (layer instanceof L.Circle && 
-                                    layer.getLatLng().lat === station.coordinates[0] && 
+                                if (layer instanceof L.Circle &&
+                                    layer.getLatLng().lat === station.coordinates[0] &&
                                     layer.getLatLng().lng === station.coordinates[1]) {
                                     map.removeLayer(layer);
                                 }
                             });
-                            
+
                             // Add new flood circle if status is not normal
                             if (station.status !== 'normal') {
                                 // Create the circle with proper styling
@@ -539,7 +543,7 @@
                                     fillOpacity: 0.5,
                                     radius: 250
                                 }).addTo(map);
-                                
+
                                 // Get the SVG element of the circle and add animation class
                                 setTimeout(() => {
                                     const circleElement = circle.getElement();
@@ -553,7 +557,7 @@
                                     }
                                 }, 10); // Small delay to ensure the element is in the DOM
                             }
-                            
+
                             // Update the UI with animation
                             updateStatusPanel(stationId);
                             updateStationControls();
@@ -563,20 +567,20 @@
                     }, (error) => {
                         console.error(`Error listening to ${stationId}:`, error);
                     });
-                    
+
                     console.log(`Successfully set up listener for ${stationId}`);
-                    
+
                     // Store the unsubscribe function to clean up later if needed
                     if (!window.firestoreUnsubscribes) {
                         window.firestoreUnsubscribes = {};
                     }
                     window.firestoreUnsubscribes[stationId] = unsubscribe;
-                    
+
                 } catch (error) {
                     console.error(`Exception setting up listener for ${stationId}:`, error);
                 }
             });
-            
+
             // Test query to verify Firestore access
             console.log("Testing Firestore access with a simple query...");
             db.collection('stations').get()
@@ -594,7 +598,7 @@
         // Get user location
         function getUserLocation() {
             document.getElementById('loading-overlay').style.display = 'flex';
-            
+
             const options = {
                 enableHighAccuracy: true,
                 timeout: 10000,
@@ -604,7 +608,7 @@
             navigator.geolocation.getCurrentPosition(
                 position => {
                     const { latitude, longitude } = position.coords;
-                    startMarker = L.marker([latitude, longitude], { 
+                    startMarker = L.marker([latitude, longitude], {
                         draggable: true,
                         icon: startIcon
                     })
@@ -613,12 +617,12 @@
                         .openPopup();
                     map.setView([latitude, longitude], 13);
                     document.getElementById('loading-overlay').style.display = 'none';
-                }, 
+                },
                 error => {
                     console.error("Geolocation failed:", error);
                     let errorMessage = "Unable to access your location. ";
-                    
-                    switch(error.code) {
+
+                    switch (error.code) {
                         case error.PERMISSION_DENIED:
                             errorMessage += "Please enable location services in your browser settings.";
                             break;
@@ -633,7 +637,7 @@
                     }
 
                     const fallbackCoords = [15.024505, 120.680464];
-                    startMarker = L.marker(fallbackCoords, { 
+                    startMarker = L.marker(fallbackCoords, {
                         draggable: true,
                         icon: startIcon
                     })
@@ -655,7 +659,7 @@
                     window.location.href = './signup.html';
                     return;
                 }
-                
+
                 // Fetch user data from Firestore to get the phone number
                 db.collection('users').doc(user.uid).get()
                     .then((doc) => {
@@ -699,8 +703,8 @@
 
             // Convert station ID and status to numbers
             const stationNum = parseInt(stationId.split('-')[1]) - 1; // station-1 becomes 0
-            const statusNum = station.status === 'normal' ? 0 : 
-                             station.status === 'warning' ? 1 : 2;
+            const statusNum = station.status === 'normal' ? 0 :
+                station.status === 'warning' ? 1 : 2;
 
             try {
                 console.log('Sending update to server:', {
@@ -708,7 +712,7 @@
                     status: statusNum
                 });
 
-                const API_URL = window.location.hostname === 'localhost' 
+                const API_URL = window.location.hostname === 'localhost'
                     ? 'http://localhost:5501'
                     : 'https://your-backend-domain.onrender.com';
                 const response = await fetch(`${API_URL}/update-station?s=${stationNum}&st=${statusNum}`, {
@@ -724,7 +728,7 @@
 
                 const data = await response.json();
                 console.log('Server response:', data);
-                
+
                 if (!data.success) {
                     throw new Error(data.message || 'Update failed');
                 }
@@ -732,14 +736,14 @@
                 // Update UI immediately after successful server update
                 updateStatusPanel();
                 updateStationControls();
-                
+
             } catch (error) {
                 console.error('Failed to update station status:', error);
                 alert('Failed to update station status. Please try again.');
             }
         }
 
-        
+
 
         function updateStationControls() {
             const controlsContainer = document.getElementById('station-controls');
@@ -751,11 +755,10 @@
                         onclick="toggleStationStatus('${station.id}')"
                     >
                         <span>${station.name}</span>
-                        <span class="status-text">${
-                            station.status === 'normal' ? 'Normal' : 
-                            station.status === 'warning' ? 'Warning' : 
-                            'Emergency'
-                        }</span>
+                        <span class="status-text">${station.status === 'normal' ? 'Normal' :
+                    station.status === 'warning' ? 'Warning' :
+                        'Emergency'
+                }</span>
                     </button>
                 `).join('')}
             `;
@@ -789,7 +792,7 @@
                 return;
             }
 
-            endMarker = L.marker(center, { 
+            endMarker = L.marker(center, {
                 draggable: true,
                 icon: endIcon
             })
@@ -798,10 +801,10 @@
                 .openPopup();
 
             // Add dragend event to check new position
-            endMarker.on('dragend', function(event) {
+            endMarker.on('dragend', function (event) {
                 const marker = event.target;
                 const position = marker.getLatLng();
-                
+
                 const isInFloodedArea = stations.some(station => {
                     if (station.status !== 'normal') {
                         const distance = map.distance(position, L.latLng(station.coordinates));
@@ -849,10 +852,10 @@
             document.getElementById('car-mode').classList.add('active');
             document.getElementById('bike-mode').classList.remove('active');
             transportMode = 'driving';
-            
+
             // Update expressway stations
             updateExpresswayStations('car');
-            
+
             // Recalculate route if one exists
             if (startMarker && endMarker && routingControl) {
                 console.log('Recalculating route with driving mode');
@@ -865,10 +868,10 @@
             document.getElementById('bike-mode').classList.add('active');
             document.getElementById('car-mode').classList.remove('active');
             transportMode = 'bike';
-            
+
             // Update expressway stations
             updateExpresswayStations('bike');
-            
+
             // Recalculate route if one exists
             if (startMarker && endMarker && routingControl) {
                 console.log('Recalculating route with cycling mode');
