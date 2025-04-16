@@ -95,7 +95,33 @@ async function sendAlerts(stationId, newStatus) {
         });
 
         // Prepare message
-        const message = `ALARMA Alert: Station ${stationId} is now reporting ${newStatus} status.`;
+        // Mapping for station IDs to human-readable names and coordinates
+        const stationMapping = {
+            'station-1': { name: 'St. Jude', coordinates: '15.045331, 120.671534' },
+            'station-2': { name: 'Sacop', coordinates: '15.064447, 120.651855' },
+            'station-3': { name: 'Lazatin', coordinates: '15.030681, 120.675324' },
+        };
+
+        // Get station info or use generic info if not found
+        const stationInfo = stationMapping[stationId] || 
+            { name: stationId, coordinates: 'Coordinates unavailable' };
+
+        // Map status to flood alert levels
+        const alertLevelMap = {
+            'normal': 'GREEN ALERT',
+            'warning': 'YELLOW ALERT',
+            'emergency': 'RED ALERT'
+        };
+        const alertLevel = alertLevelMap[newStatus] || 'ALERT';
+
+        const message = `ALARMA FLOOD ALERT
+
+Location: ${stationInfo.name} (${stationInfo.coordinates})
+Flood Status: ${alertLevel}
+For safe route navigation: alarma.onrender.com
+
+Smart Alerts, Safer Roads
+alarma.onrender.com`;
 
         // Filter users with phone numbers
         const usersWithPhones = usersSnapshot.docs.filter(doc => doc.data().phoneNumber);
