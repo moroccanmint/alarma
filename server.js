@@ -108,9 +108,9 @@ async function sendAlerts(stationId, newStatus) {
 
         // Map status to flood alert levels
         const alertLevelMap = {
-            'normal': 'GREEN ALERT',
-            'warning': 'YELLOW ALERT',
-            'emergency': 'RED ALERT'
+            'normal': 'GREEN ALERT(Normal)',
+            'warning': 'YELLOW ALERT(Caution)',
+            'emergency': 'RED ALERT(Unsafe)'
         };
         const alertLevel = alertLevelMap[newStatus] || 'ALERT';
 
