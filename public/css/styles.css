@@ -280,10 +280,33 @@ body {
         position: fixed;
         transform: translateX(-100%);
         width: 280px;
+        height: 100%;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
     }
 
     #sidebar.active {
         transform: translateX(0);
+    }
+    
+    #station-container {
+        flex: 1;
+        overflow-y: auto;
+        /* Ensure there's space for the user info section */
+        padding-bottom: 1rem;
+        max-height: calc(100vh - var(--header-height) - 120px);
+    }
+    
+    #user-info {
+        position: sticky;
+        bottom: 0;
+        padding: 1rem;
+        background: rgba(19, 19, 19, 0.95);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        width: 100%;
+        z-index: 10;
     }
 
     #toggle-sidebar {
@@ -301,6 +324,24 @@ body {
 }
 
 @media (max-width: 380px) {
+    #sidebar {
+        width: 260px;
+    }
+    
+    #user-info {
+        padding: 0.75rem;
+    }
+    
+    #phone-display {
+        font-size: 0.8rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    #logout-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
     .leaflet-routing-container {
         width: 100%;
         max-width: 350px;
