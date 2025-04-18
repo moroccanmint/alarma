@@ -119,7 +119,9 @@ async function sendAlerts(stationId, newStatus) {
 Location: ${stationInfo.name} (${stationInfo.coordinates})
 Flood Status: ${alertLevel}
 
- ALARMA: Smart Alerts, Safer Roads`;
+For safe route navigation, visit the official website.
+ 
+ALARMA: Smart Alerts, Safer Roads`;
 
         // Filter users with phone numbers
         const usersWithPhones = usersSnapshot.docs.filter(doc => doc.data().phoneNumber);
